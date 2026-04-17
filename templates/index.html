@@ -1,40 +1,194 @@
-
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
 <head>
     <meta charset="UTF-8">
-    <title>محلل رحلات مطار الملك عبدالعزيز</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>الرحلات الدولية صالة ١</title>
     <style>
-        body { font-family: sans-serif; background: #f0f2f5; text-align: center; padding: 20px; }
-        .card { background: white; padding: 20px; border-radius: 10px; max-width: 500px; margin: auto; shadow: 0 2px 10px rgba(0,0,0,0.1); }
-        input { padding: 8px; margin: 10px; border-radius: 5px; border: 1px solid #ddd; }
-        button { padding: 10px 20px; background: #007bff; color: white; border: none; border-radius: 5px; cursor: pointer; }
-        .gap-item { background: #fff3cd; padding: 5px; margin: 5px 0; border-radius: 5px; list-style: none; }
+        /* إعدادات الوضع الداكن */
+        body { 
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
+            background-color: #121212; 
+            color: #e0e0e0; 
+            text-align: center; 
+            padding: 20px; 
+            margin: 0;
+        }
+
+        .container {
+            max-width: 600px;
+            margin: auto;
+        }
+
+        .card { 
+            background: #1e1e1e; 
+            padding: 30px; 
+            border-radius: 20px; 
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5); 
+            border: 1px solid #333;
+            margin-bottom: 20px;
+        }
+
+        h2 { 
+            color: #ffffff; 
+            margin-bottom: 5px;
+            font-size: 1.8rem;
+        }
+
+        .date-badge {
+            background: #333;
+            color: #bbb;
+            padding: 5px 15px;
+            border-radius: 50px;
+            font-size: 0.9rem;
+            display: inline-block;
+            margin-bottom: 20px;
+        }
+
+        /* تنسيق المدخلات */
+        .input-group {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+
+        input[type="time"] { 
+            padding: 12px; 
+            border-radius: 10px; 
+            border: 1px solid #444; 
+            background-color: #2c2c2c; 
+            color: white; 
+            font-size: 1rem;
+            outline: none;
+        }
+
+        input[type="time"]:focus {
+            border-color: #0d6efd;
+        }
+
+        button { 
+            padding: 12px 40px; 
+            background-color: #0d6efd; 
+            color: white; 
+            border: none; 
+            border-radius: 12px; 
+            cursor: pointer; 
+            font-weight: bold;
+            font-size: 1.1rem;
+            transition: 0.3s;
+            width: 100%;
+        }
+
+        button:hover {
+            background-color: #0b5ed7;
+            transform: translateY(-2px);
+        }
+
+        /* النتائج */
+        .results-section {
+            margin-top: 30px;
+            text-align: right;
+        }
+
+        .stats {
+            display: flex;
+            justify-content: space-around;
+            margin-bottom: 25px;
+        }
+
+        .stat-box {
+            background: #252525;
+            padding: 15px;
+            border-radius: 15px;
+            width: 45%;
+            text-align: center;
+            border: 1px solid #333;
+        }
+
+        .stat-box h5 { margin: 0; color: #888; font-size: 0.8rem; }
+        .stat-box p { margin: 5px 0 0; font-size: 1.2rem; font-weight: bold; }
+
+        .gap-title {
+            color: #bb86fc;
+            margin-bottom: 15px;
+            font-size: 1.1rem;
+            display: block;
+        }
+
+        .gap-item { 
+            background: #2d2a1e; 
+            color: #ffd54f;
+            padding: 15px; 
+            margin: 10px 0; 
+            border-radius: 12px; 
+            list-style: none;
+            border: 1px solid #444;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .gap-duration {
+            background: rgba(255, 213, 79, 0.1);
+            padding: 4px 10px;
+            border-radius: 6px;
+            font-size: 0.9rem;
+        }
+
+        hr { border: 0; border-top: 1px solid #333; margin: 25px 0; }
+        
+        .no-gaps { color: #666; font-style: italic; text-align: center; }
     </style>
 </head>
 <body>
-    <div class="card">
-        <h2>✈️ محلل الرحلات القادمة</h2>
-        <p>التاريخ: {{ current_date }}</p>
-        <form method="POST">
-            من: <input type="time" name="start_time" value="13:00">
-            إلى: <input type="time" name="end_time" value="23:59">
-            <br>
-            <button type="submit">تحليل الرحلات</button>
-        </form>
+    <div class="container">
+        <div class="card">
+            <h2>الرحلات الدولية صالة ١ 🛬</h2>
+            <div class="date-badge">التاريخ: {{ current_date }}</div>
+            
+            <form method="POST">
+                <div class="input-group">
+                    <div>
+                        <label style="display:block; font-size: 0.8rem; color: #888;">من</label>
+                        <input type="time" name="start_time" value="13:00">
+                    </div>
+                    <div>
+                        <label style="display:block; font-size: 0.8rem; color: #888;">إلى</label>
+                        <input type="time" name="end_time" value="23:59">
+                    </div>
+                </div>
+                <button type="submit">تحليل الرحلات</button>
+            </form>
 
-        {% if results %}
-            <hr>
-            <h3>النتائج:</h3>
-            <p>✅ الرحلات المنتظرة: {{ results.count }}</p>
-            <p>⚠️ المتاخرات: {{ results.delayed }}</p>
-            <h4>⏳ الفجوات (> 15 دقيقة):</h4>
-            {% for gap in results.gaps %}
-                <div class="gap-item">{{ gap.from }} ← {{ gap.to }} ({{ gap.duration }} دقيقة)</div>
-            {% else %}
-                <p>لا توجد فجوات كبيرة</p>
-            {% endfor %}
-        {% endif %}
+            {% if results %}
+                <hr>
+                <div class="results-section">
+                    <div class="stats">
+                        <div class="stat-box">
+                            <h5>الرحلات المنتظرة</h5>
+                            <p style="color: #4caf50;">{{ results.count }} ✅</p>
+                        </div>
+                        <div class="stat-box">
+                            <h5>المتأخرات</h5>
+                            <p style="color: #ff5252;">{{ results.delayed }} ⚠️</p>
+                        </div>
+                    </div>
+
+                    <strong class="gap-title">⏳ الفجوات (> 15 دقيقة):</strong>
+                    {% for gap in results.gaps %}
+                        <div class="gap-item">
+                            <span>{{ gap.from }} ← {{ gap.to }}</span>
+                            <span class="gap-duration">({{ gap.duration }} دقيقة)</span>
+                        </div>
+                    {% else %}
+                        <p class="no-gaps">لا توجد فجوات كبيرة حالياً</p>
+                    {% endfor %}
+                </div>
+            {% endif %}
+        </div>
     </div>
 </body>
 </html>
