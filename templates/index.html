@@ -7,40 +7,19 @@
     <style>
         body { font-family: 'Segoe UI', Tahoma, sans-serif; background-color: #121212; color: #e0e0e0; text-align: center; padding: 20px; margin: 0; }
         .container { max-width: 500px; margin: auto; }
-        
-        /* زر الرجوع يظهر فقط عند وجود نتائج */
-        .back-btn {
-            display: inline-flex;
-            align-items: center;
-            gap: 5px;
-            color: #bbb;
-            text-decoration: none;
-            font-size: 0.9rem;
-            margin-bottom: 15px;
-            background: #252525;
-            padding: 8px 15px;
-            border-radius: 10px;
-            border: 1px solid #333;
-            cursor: pointer;
-        }
-
+        .back-btn { display: inline-flex; align-items: center; gap: 5px; color: #bbb; text-decoration: none; font-size: 0.9rem; margin-bottom: 15px; background: #252525; padding: 8px 15px; border-radius: 10px; border: 1px solid #333; cursor: pointer; }
         .card { background: #1e1e1e; padding: 25px; border-radius: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); border: 1px solid #333; }
         h2 { color: #ffffff; margin-bottom: 5px; font-size: 1.6rem; }
         .date-badge { background: #333; color: #bbb; padding: 5px 15px; border-radius: 50px; font-size: 0.85rem; display: inline-block; margin-bottom: 20px; }
         .input-group { display: flex; justify-content: center; gap: 10px; margin-bottom: 20px; }
         input[type="time"] { padding: 12px; border-radius: 10px; border: 1px solid #444; background-color: #2c2c2c; color: white; font-size: 1rem; outline: none; width: 45%; }
-        
         .btn-submit { padding: 12px; background-color: #0d6efd; color: white; border: none; border-radius: 12px; cursor: pointer; font-weight: bold; font-size: 1.1rem; width: 100%; }
-
         .stats { display: flex; justify-content: space-between; margin-top: 25px; flex-wrap: wrap; gap: 10px; }
         .stat-box { background: #252525; padding: 15px; border-radius: 15px; width: 47%; text-align: center; border: 1px solid #333; box-sizing: border-box; }
-        
-        /* تمييز صندوق الذروة */
         .stat-box.peak { width: 100%; border: 1px solid #bb86fc; background: #241b2e; padding: 20px; }
         .stat-box h5 { margin: 0; color: #888; font-size: 0.8rem; }
         .stat-box p { margin: 8px 0; font-size: 1.2rem; font-weight: bold; color: #bb86fc; }
         .peak-count { background: #bb86fc; color: #121212; padding: 2px 10px; border-radius: 5px; font-size: 0.9rem; font-weight: bold; }
-        
         .gap-title { color: #bb86fc; margin: 25px 0 10px; font-size: 1rem; text-align: right; display: block; }
         .gap-item { background: #2d2a1e; color: #ffd54f; padding: 12px; margin: 8px 0; border-radius: 12px; border: 1px solid #444; display: flex; justify-content: space-between; align-items: center; }
         .gap-duration { background: rgba(255, 213, 79, 0.1); padding: 4px 10px; border-radius: 6px; font-size: 0.85rem; }
@@ -49,7 +28,6 @@
 </head>
 <body>
     <div class="container">
-
         {% if results %}
         <div style="text-align: right;">
             <a href="/" class="back-btn">↩ تحديث البحث</a>
