@@ -35,7 +35,7 @@
         {% endif %}
 
         <div class="card">
-            <h2>الرحلات الدولية صالة ١ 🛬</h2>
+            <h2>رحلات الوصول صالة ١ قدوم</h2>
             <div class="date-badge">تاريخ اليوم: {{ current_date }}</div>
             
             <form method="POST">
@@ -54,7 +54,7 @@
                     
                     {% if results.peak %}
                     <div class="stat-box peak">
-                        <h5>⚠️ ⚠️ وقت الذروة (أعلى كثافة رحلات)</h5>
+                        <h5>⚠️كثافة الرحلات⚠️</h5>
                         <p>من {{ results.peak.start }} إلى {{ results.peak.end }}</p>
                         <div style="margin-top: 10px;">
                             <span class="peak-count">عدد الرحلات: {{ results.peak.count }}</span>
@@ -63,7 +63,7 @@
                     {% endif %}
                 </div>
 
-                <strong class="gap-title">⏳ فجوات زمنية (> 15 دقيقة):</strong>
+                <strong class="gap-title">اوقات لايوجد فيها رحلات</strong>
                 {% for gap in results.gaps %}
                     <div class="gap-item">
                         <span>{{ gap.from }} ← {{ gap.to }}</span>
