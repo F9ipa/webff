@@ -30,7 +30,6 @@ class FlightAnalyzer:
 def index():
     results = None
     now = datetime.now()
-    # التاريخ تلقائي اليوم
     current_date = now.strftime('%Y-%m-%d')
     
     if request.method == 'POST':
@@ -46,15 +45,20 @@ def index():
         
         flight_times = []
         delayed_count = 0
+        hourly_stats = Counter()
+
         for f in data:
             status_code = f.get('PublicRemark', {}).get('Code', '').upper()
-            if status_code in ['ARR', 'DLV', 'LND']: continue
+            # الفلترة الصارمة: استبعاد الرحلات التي وصلت أو هبطت أو تم تسليم حقائبها
+            if status_code in ['ARR', 'DLV', 'LND', 'SCH']: continue 
             
             dt_raw = f.get('EarlyOrDelayedDateTime').split('+')[0]
             dt_obj = datetime.fromisoformat(dt_raw)
+            
             if dt_obj >= limit_end_dt: continue
             
             flight_times.append(dt_obj)
+            hourly_stats[dt_obj.hour] += 1
             if status_code == 'DEL': delayed_count += 1
 
         flight_times.sort()
@@ -64,11 +68,18 @@ def index():
             if diff > 15:
                 gaps.append({'from': flight_times[i].strftime('%H:%M'), 'to': flight_times[i+1].strftime('%H:%M'), 'duration': int(diff)})
 
+        peak_results = None
+        if hourly_stats:
+            peak_hour = max(hourly_stats, key=hourly_stats.get)
+            peak_results = {
+                'start': f"{peak_hour:02d}:00", 'end': f"{peak_hour+1:02d}:00", 'count': hourly_stats[peak_hour]
+            }
+
         results = {
-            'date': current_date,
             'count': len(flight_times),
             'delayed': delayed_count,
-            'gaps': gaps
+            'gaps': gaps,
+            'peak': peak_results
         }
 
     return render_template('index.html', results=results, current_date=current_date)
