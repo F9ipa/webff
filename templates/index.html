@@ -30,7 +30,7 @@
     <div class="container">
         {% if results %}
         <div style="text-align: right;">
-            <a href="/" class="back-btn">↩ تحديث البحث</a>
+            <a href="/" class="back-btn">↩</a>
         </div>
         {% endif %}
 
@@ -54,7 +54,7 @@
                     
                     {% if results.peak %}
                     <div class="stat-box peak">
-                        <h5>🔥 وقت الذروة (أعلى كثافة رحلات)</h5>
+                        <h5>⚠️ ⚠️ وقت الذروة (أعلى كثافة رحلات)</h5>
                         <p>من {{ results.peak.start }} إلى {{ results.peak.end }}</p>
                         <div style="margin-top: 10px;">
                             <span class="peak-count">عدد الرحلات: {{ results.peak.count }}</span>
