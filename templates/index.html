@@ -1,1 +1,40 @@
 
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <title>محلل رحلات مطار الملك عبدالعزيز</title>
+    <style>
+        body { font-family: sans-serif; background: #f0f2f5; text-align: center; padding: 20px; }
+        .card { background: white; padding: 20px; border-radius: 10px; max-width: 500px; margin: auto; shadow: 0 2px 10px rgba(0,0,0,0.1); }
+        input { padding: 8px; margin: 10px; border-radius: 5px; border: 1px solid #ddd; }
+        button { padding: 10px 20px; background: #007bff; color: white; border: none; border-radius: 5px; cursor: pointer; }
+        .gap-item { background: #fff3cd; padding: 5px; margin: 5px 0; border-radius: 5px; list-style: none; }
+    </style>
+</head>
+<body>
+    <div class="card">
+        <h2>✈️ محلل الرحلات القادمة</h2>
+        <p>التاريخ: {{ current_date }}</p>
+        <form method="POST">
+            من: <input type="time" name="start_time" value="13:00">
+            إلى: <input type="time" name="end_time" value="23:59">
+            <br>
+            <button type="submit">تحليل الرحلات</button>
+        </form>
+
+        {% if results %}
+            <hr>
+            <h3>النتائج:</h3>
+            <p>✅ الرحلات المنتظرة: {{ results.count }}</p>
+            <p>⚠️ المتاخرات: {{ results.delayed }}</p>
+            <h4>⏳ الفجوات (> 15 دقيقة):</h4>
+            {% for gap in results.gaps %}
+                <div class="gap-item">{{ gap.from }} ← {{ gap.to }} ({{ gap.duration }} دقيقة)</div>
+            {% else %}
+                <p>لا توجد فجوات كبيرة</p>
+            {% endfor %}
+        {% endif %}
+    </div>
+</body>
+</html>
