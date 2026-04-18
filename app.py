@@ -27,7 +27,6 @@ class FlightAnalyzer:
         except: return []
 
 def format_time_12h(dt_obj):
-    # تنسيق الوقت لنظام 12 ساعة (ص/م)
     hour = dt_obj.hour
     period = "ص" if hour < 12 else "م"
     hour_12 = hour % 12
@@ -38,15 +37,11 @@ def format_time_12h(dt_obj):
 def index():
     now = datetime.now()
     current_date = now.strftime('%Y-%m-%d')
-    # وقت البداية التلقائي (الآن)
-    default_start = now.strftime('%H:%M')
     
     results = None
     view_type = request.form.get('view_type', 'main')
-    
-    # وقت البداية دائماً هو الوقت الحالي (لا يتأثر بالمدخلات ليبقى ثابتاً)
-    start_h = default_start
-    # وقت النهاية يمكن تعديله من المستخدم
+    # استرجاع الوقت من المدخلات أو وضع قيم افتراضية
+    start_h = request.form.get('start_time', '00:00')
     end_h = request.form.get('end_time', '23:59')
 
     if request.method == 'POST' and view_type != 'main':
@@ -57,9 +52,11 @@ def index():
         data = analyzer.fetch_data(iso_start, iso_end)
         
         flights_list = []
+        hourly_stats = Counter()
         hourly_pax = Counter()
         total_pax = 0
-        
+        flight_objects = []
+
         for f in data:
             try:
                 dt_raw = f.get('EarlyOrDelayedDateTime', '').split('+')[0]
@@ -69,7 +66,6 @@ def index():
                 origin_info = f.get('OriginAirport') or {}
                 baggage_info = f.get('BaggageReclaim') or {}
 
-                # حساب الركاب: الطائرات الكبيرة 300، الصغيرة 170
                 ac_type = f.get('AircraftType', '')
                 pax = 300 if any(x in str(ac_type) for x in ['777', '787', '330', '350', '380']) else 170
                 total_pax += pax
@@ -82,17 +78,37 @@ def index():
                     'pax': pax,
                     'belt': baggage_info.get('BaggageReclaimId') or "---"
                 })
+                
+                hourly_stats[dt_obj.hour] += 1
                 hourly_pax[dt_obj.hour] += pax
+                flight_objects.append(dt_obj)
             except: continue
 
-        # حساب الاحتياج (أعلى كثافة ركاب في ساعة واحدة مقسومة على 60)
-        needed = math.ceil(max(hourly_pax.values() or [0]) / 60)
+        # حساب ساعة الذروة
+        peak_info = None
+        if hourly_stats:
+            p_hour = max(hourly_stats, key=hourly_stats.get)
+            peak_info = {
+                'start': format_time_12h(datetime.strptime(f"{p_hour}:00", "%H:%M")),
+                'end': format_time_12h(datetime.strptime(f"{(p_hour+1)%24}:00", "%H:%M")),
+                'count': hourly_stats[p_hour]
+            }
+
+        # حساب الفجوات (أكثر من 15 دقيقة)
+        flight_objects.sort()
+        gaps = []
+        for i in range(len(flight_objects) - 1):
+            diff = (flight_objects[i+1] - flight_objects[i]).total_seconds() / 60
+            if diff > 15:
+                gaps.append({'from': format_time_12h(flight_objects[i]), 'to': format_time_12h(flight_objects[i+1]), 'duration': int(diff)})
 
         results = {
             'flights': flights_list,
             'total_flights': len(flights_list),
             'total_pax': total_pax,
-            'needed_counters': needed
+            'gaps': gaps,
+            'peak': peak_info,
+            'needed_counters': math.ceil(max(hourly_pax.values() or [0]) / 60)
         }
 
     return render_template('index.html', results=results, start_h=start_h, end_h=end_h, view_type=view_type)
