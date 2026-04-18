@@ -64,13 +64,19 @@ def index():
             dt_obj = datetime.fromisoformat(dt_raw)
             pax = analyzer.get_dynamic_capacity(f.get('AircraftType'))
             
+            # --- التعديلات الجديدة بناءً على الـ API ---
+            airline = f.get('AirlineCode', '')
+            f_num = f.get('FlightNumber', '')
+            belt = f.get('BaggageReclaim', {}).get('BaggageReclaimId') or '---'
+            
             flights_list.append({
-                'fn': f.get('FlightNumber', '---'),
-                'origin': f"{f.get('OriginAirportArabicName') or 'غير معروف'} - {f.get('OriginAirportIataCode') or '???'}",
+                'flight_full': f"{airline}{f_num}", # رمز الطيران + الرقم
+                'origin_city': f.get('OriginAirportArabicName') or "غير معروف",
+                'origin_iata': f.get('OriginAirportIataCode') or "???",
                 'time': dt_obj.strftime('%H:%M'),
                 'pax': pax,
-                'ac': f.get('AircraftType', ''),
-                'is_delayed': status_code == 'DEL'
+                'belt': belt, # مسار الأمتعة
+                'ac': f.get('AircraftType', '')
             })
             
             hourly_stats[dt_obj.hour] += 1
