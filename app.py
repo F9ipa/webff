@@ -64,18 +64,21 @@ def index():
             dt_obj = datetime.fromisoformat(dt_raw)
             pax = analyzer.get_dynamic_capacity(f.get('AircraftType'))
             
-            # --- التعديلات الجديدة بناءً على الـ API ---
+            # تصحيح جلب البيانات بناءً على الـ API الفعلي
             airline = f.get('AirlineCode', '')
             f_num = f.get('FlightNumber', '')
-            belt = f.get('BaggageReclaim', {}).get('BaggageReclaimId') or '---'
+            
+            # جلب السير من الحقل الصحيح (BaggageReclaim -> BaggageReclaimId)
+            baggage_info = f.get('BaggageReclaim', {})
+            belt = baggage_info.get('BaggageReclaimId') if baggage_info else '---'
             
             flights_list.append({
-                'flight_full': f"{airline}{f_num}", # رمز الطيران + الرقم
+                'flight_full': f"{airline}{f_num}", 
                 'origin_city': f.get('OriginAirportArabicName') or "غير معروف",
                 'origin_iata': f.get('OriginAirportIataCode') or "???",
                 'time': dt_obj.strftime('%H:%M'),
                 'pax': pax,
-                'belt': belt, # مسار الأمتعة
+                'belt': belt,
                 'ac': f.get('AircraftType', '')
             })
             
