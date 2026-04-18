@@ -24,11 +24,9 @@ class FlightAnalyzer:
         try:
             response = requests.get(self.url, params=params, headers=self.headers, timeout=10)
             return response.json().get('value', [])
-        except:
-            return []
+        except: return []
 
 def format_time_12h(dt_obj):
-    # دالة تحويل الوقت إلى نظام 12 ساعة (ص/م)
     hour = dt_obj.hour
     period = "ص" if hour < 12 else "م"
     hour_12 = hour % 12
@@ -39,12 +37,12 @@ def format_time_12h(dt_obj):
 def index():
     now = datetime.now()
     current_date = now.strftime('%Y-%m-%d')
-    results = None
+    default_start = now.strftime('%H:%M')
     
+    results = None
     view_type = request.form.get('view_type', 'main')
-    start_h = request.form.get('start_time', '00:00')
+    start_h = request.form.get('start_time', default_start)
     end_h = request.form.get('end_time', '23:59')
-    active_counters = request.form.get('active_counters', type=int) or 0
 
     if request.method == 'POST' and view_type != 'main':
         iso_start = f"{current_date}T{start_h}:00.000+03:00"
@@ -56,6 +54,7 @@ def index():
         flights_list = []
         hourly_stats = Counter()
         hourly_pax = Counter()
+        total_pax = 0
         flight_objects = []
 
         for f in data:
@@ -68,7 +67,8 @@ def index():
                 baggage_info = f.get('BaggageReclaim') or {}
 
                 ac_type = f.get('AircraftType', '')
-                pax = 300 if any(x in str(ac_type) for x in ['777', '787', '330', '350', '380']) else 170
+                pax = 300 if any(x in str(ac_type) for x in ['777', '787', '330', '350']) else 170
+                total_pax += pax
 
                 flights_list.append({
                     'flight_full': f"{(airline_info.get('Code') or '')} {(f.get('FlightNumber') or '')}".strip(),
@@ -82,17 +82,14 @@ def index():
                 hourly_stats[dt_obj.hour] += 1
                 hourly_pax[dt_obj.hour] += pax
                 flight_objects.append(dt_obj)
-            except:
-                continue
+            except: continue
 
         peak_info = None
         if hourly_stats:
             p_hour = max(hourly_stats, key=hourly_stats.get)
-            start_peak = datetime.strptime(f"{p_hour}:00", "%H:%M")
-            end_peak = datetime.strptime(f"{(p_hour+1)%24}:00", "%H:%M")
             peak_info = {
-                'start': format_time_12h(start_peak),
-                'end': format_time_12h(end_peak),
+                'start': format_time_12h(datetime.strptime(f"{p_hour}:00", "%H:%M")),
+                'end': format_time_12h(datetime.strptime(f"{(p_hour+1)%24}:00", "%H:%M")),
                 'count': hourly_stats[p_hour]
             }
 
@@ -101,22 +98,18 @@ def index():
         for i in range(len(flight_objects) - 1):
             diff = (flight_objects[i+1] - flight_objects[i]).total_seconds() / 60
             if diff > 15:
-                gaps.append({
-                    'from': format_time_12h(flight_objects[i]),
-                    'to': format_time_12h(flight_objects[i+1]),
-                    'duration': int(diff)
-                })
+                gaps.append({'from': format_time_12h(flight_objects[i]), 'to': format_time_12h(flight_objects[i+1]), 'duration': int(diff)})
 
         results = {
             'flights': flights_list,
+            'total_flights': len(flights_list),
+            'total_pax': total_pax,
             'gaps': gaps,
             'peak': peak_info,
-            'max_hourly_pax': max(hourly_pax.values() or [0]),
-            'needed_counters': math.ceil(max(hourly_pax.values() or [0]) / 60),
-            'active_counters': active_counters
+            'needed_counters': math.ceil(max(hourly_pax.values() or [0]) / 60)
         }
 
-    return render_template('index.html', results=results, current_date=current_date, start_h=start_h, end_h=end_h, view_type=view_type)
+    return render_template('index.html', results=results, start_h=start_h, end_h=end_h, view_type=view_type)
 
 if __name__ == '__main__':
     app.run(debug=True)
