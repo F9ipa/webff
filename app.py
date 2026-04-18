@@ -15,12 +15,6 @@ class FlightAnalyzer:
             "User-Agent": "Mozilla/5.0"
         }
 
-    def get_dynamic_capacity(self, ac_type):
-        if not ac_type: return 165
-        ac = str(ac_type).upper()
-        if any(x in ac for x in ['777', '787', '330', '350', '747', '380']): return 300
-        return 170
-
     def fetch_data(self, start_dt, end_dt):
         params = {
             "$filter": f"(EarlyOrDelayedDateTime ge {start_dt} and EarlyOrDelayedDateTime lt {end_dt}) and PublicRemark/Code ne 'NOP' and tolower(FlightNature) eq 'arrival' and Terminal eq 'T1' and (tolower(InternationalStatus) eq 'international')",
@@ -29,8 +23,11 @@ class FlightAnalyzer:
         }
         try:
             response = requests.get(self.url, params=params, headers=self.headers, timeout=10)
-            return response.json().get('value', [])
-        except: return []
+            if response.status_code == 200:
+                return response.json().get('value', [])
+            return []
+        except:
+            return []
 
 @app.route('/', methods=['GET', 'POST'])
 def index():
@@ -39,7 +36,7 @@ def index():
     results = None
     
     view_type = request.form.get('view_type', 'main')
-    start_h = request.form.get('start_time', now.strftime('%H:%M'))
+    start_h = request.form.get('start_time', '00:00')
     end_h = request.form.get('end_time', '23:59')
     active_counters = request.form.get('active_counters', type=int) or 0
 
@@ -56,44 +53,48 @@ def index():
         flight_objects = []
 
         for f in data:
-            # فلترة الرحلات التي لم تصل بعد
-            status_code = (f.get('PublicRemark') or {}).get('Code', '').upper()
-            if status_code in ['ARR', 'DLV', 'LND']: continue 
-            
-            # معالجة الوقت
-            dt_raw = f.get('EarlyOrDelayedDateTime').split('+')[0]
-            dt_obj = datetime.fromisoformat(dt_raw)
-            
-            # --- سحب البيانات بدقة من هيكلة الـ API الرسمي ---
-            # 1. رمز الطيران ورقم الرحلة
-            airline_code = (f.get('Airline') or {}).get('Code') or f.get('AirlineCode') or ""
-            flight_num = f.get('FlightNumber') or ""
-            
-            # 2. جهة القدوم (المدينة والرمز)
-            origin_info = f.get('OriginAirport') or {}
-            city_ar = origin_info.get('ArabicName') or f.get('OriginAirportArabicName') or "غير معروف"
-            iata = origin_info.get('IataCode') or f.get('OriginAirportIataCode') or "???"
-            
-            # 3. حزام الأمتعة
-            baggage = f.get('BaggageReclaim') or {}
-            belt = baggage.get('BaggageReclaimId') or "---"
-            
-            pax = analyzer.get_dynamic_capacity(f.get('AircraftType'))
-            
-            flights_list.append({
-                'flight_full': f"{airline_code} {flight_num}".strip(), 
-                'origin_city': city_ar,
-                'origin_iata': iata,
-                'time': dt_obj.strftime('%H:%M'),
-                'pax': pax,
-                'belt': belt,
-                'ac': f.get('AircraftType', '')
-            })
-            
-            hourly_stats[dt_obj.hour] += 1
-            hourly_pax[dt_obj.hour] += pax
-            flight_objects.append(dt_obj)
+            try:
+                # استخراج الوقت
+                dt_raw = f.get('EarlyOrDelayedDateTime', '').split('+')[0]
+                dt_obj = datetime.fromisoformat(dt_raw)
+                
+                # استخراج البيانات من الكائنات المتداخلة (Nested Objects)
+                airline_info = f.get('Airline') or {}
+                origin_info = f.get('OriginAirport') or {}
+                baggage_info = f.get('BaggageReclaim') or {}
 
+                # 1. رمز الطيران ورقم الرحلة
+                a_code = airline_info.get('Code') or f.get('AirlineCode') or ""
+                f_num = f.get('FlightNumber') or ""
+                
+                # 2. جهة القدوم
+                city_ar = origin_info.get('ArabicName') or f.get('OriginAirportArabicName') or "غير معروف"
+                iata = origin_info.get('IataCode') or f.get('OriginAirportIataCode') or "???"
+                
+                # 3. سير الشنط
+                belt = baggage_info.get('BaggageReclaimId') or "---"
+
+                # حساب الركاب التقديري
+                ac_type = f.get('AircraftType', '')
+                pax = 300 if any(x in str(ac_type) for x in ['777', '787', '330', '350']) else 170
+
+                flights_list.append({
+                    'flight_full': f"{a_code} {f_num}".strip(),
+                    'origin_city': city_ar,
+                    'origin_iata': iata,
+                    'time': dt_obj.strftime('%H:%M'),
+                    'pax': pax,
+                    'belt': belt,
+                    'ac': ac_type
+                })
+                
+                hourly_stats[dt_obj.hour] += 1
+                hourly_pax[dt_obj.hour] += pax
+                flight_objects.append(dt_obj)
+            except:
+                continue
+
+        # تحليل الفجوات والذروة
         flight_objects.sort()
         gaps = []
         for i in range(len(flight_objects) - 1):
@@ -108,12 +109,10 @@ def index():
 
         results = {
             'flights': flights_list,
-            'count': len(flights_list),
-            'total_pax': sum(hourly_pax.values()),
             'gaps': gaps,
             'peak': peak_info,
-            'max_hourly_pax': max(hourly_pax.values() or [0]),
             'needed_counters': math.ceil(max(hourly_pax.values() or [0]) / 60),
+            'max_pax': max(hourly_pax.values() or [0]),
             'active_counters': active_counters
         }
 
