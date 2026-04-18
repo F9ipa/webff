@@ -8,7 +8,6 @@ app = Flask(__name__)
 
 class FlightAnalyzer:
     def __init__(self):
-        # الرابط الرسمي لـ API مطار الملك عبدالعزيز
         self.url = "https://www.kaia.sa/ext-api/flightsearch/flights"
         self.headers = {
             "Accept": "application/json",
@@ -17,7 +16,6 @@ class FlightAnalyzer:
         }
 
     def fetch_data(self, start_dt, end_dt):
-        # الفلترة المطلوبة: الرحلات الدولية القادمة لصالة 1
         params = {
             "$filter": f"(EarlyOrDelayedDateTime ge {start_dt} and EarlyOrDelayedDateTime lt {end_dt}) and PublicRemark/Code ne 'NOP' and tolower(FlightNature) eq 'arrival' and Terminal eq 'T1' and (tolower(InternationalStatus) eq 'international')",
             "$orderby": "EarlyOrDelayedDateTime",
@@ -25,11 +23,17 @@ class FlightAnalyzer:
         }
         try:
             response = requests.get(self.url, params=params, headers=self.headers, timeout=10)
-            if response.status_code == 200:
-                return response.json().get('value', [])
-            return []
+            return response.json().get('value', [])
         except:
             return []
+
+def format_time_12h(dt_obj):
+    # دالة تحويل الوقت إلى نظام 12 ساعة (ص/م)
+    hour = dt_obj.hour
+    period = "ص" if hour < 12 else "م"
+    hour_12 = hour % 12
+    if hour_12 == 0: hour_12 = 12
+    return f"{hour_12}:{dt_obj.strftime('%M')} {period}"
 
 @app.route('/', methods=['GET', 'POST'])
 def index():
@@ -56,38 +60,23 @@ def index():
 
         for f in data:
             try:
-                # معالجة الوقت
                 dt_raw = f.get('EarlyOrDelayedDateTime', '').split('+')[0]
                 dt_obj = datetime.fromisoformat(dt_raw)
                 
-                # استخراج البيانات من الكائنات المتداخلة (Objects) لضمان ظهورها
                 airline_info = f.get('Airline') or {}
                 origin_info = f.get('OriginAirport') or {}
                 baggage_info = f.get('BaggageReclaim') or {}
 
-                # 1. رمز الطيران ورقم الرحلة
-                a_code = airline_info.get('Code') or f.get('AirlineCode') or ""
-                f_num = f.get('FlightNumber') or ""
-                
-                # 2. جهة القدوم (المدينة والرمز)
-                city_ar = origin_info.get('ArabicName') or f.get('OriginAirportArabicName') or "غير معروف"
-                iata = origin_info.get('IataCode') or f.get('OriginAirportIataCode') or "???"
-                
-                # 3. سير الشنط
-                belt = baggage_info.get('BaggageReclaimId') or "---"
-
-                # حساب الركاب التقديري بناءً على نوع الطائرة
                 ac_type = f.get('AircraftType', '')
                 pax = 300 if any(x in str(ac_type) for x in ['777', '787', '330', '350', '380']) else 170
 
                 flights_list.append({
-                    'flight_full': f"{a_code} {f_num}".strip(),
-                    'origin_city': city_ar,
-                    'origin_iata': iata,
-                    'time': dt_obj.strftime('%H:%M'),
+                    'flight_full': f"{(airline_info.get('Code') or '')} {(f.get('FlightNumber') or '')}".strip(),
+                    'origin_city': origin_info.get('ArabicName') or "غير معروف",
+                    'origin_iata': origin_info.get('IataCode') or "???",
+                    'time': format_time_12h(dt_obj),
                     'pax': pax,
-                    'belt': belt,
-                    'ac': ac_type
+                    'belt': baggage_info.get('BaggageReclaimId') or "---"
                 })
                 
                 hourly_stats[dt_obj.hour] += 1
@@ -96,25 +85,34 @@ def index():
             except:
                 continue
 
-        # تحليل الفجوات والذروة
+        peak_info = None
+        if hourly_stats:
+            p_hour = max(hourly_stats, key=hourly_stats.get)
+            start_peak = datetime.strptime(f"{p_hour}:00", "%H:%M")
+            end_peak = datetime.strptime(f"{(p_hour+1)%24}:00", "%H:%M")
+            peak_info = {
+                'start': format_time_12h(start_peak),
+                'end': format_time_12h(end_peak),
+                'count': hourly_stats[p_hour]
+            }
+
         flight_objects.sort()
         gaps = []
         for i in range(len(flight_objects) - 1):
             diff = (flight_objects[i+1] - flight_objects[i]).total_seconds() / 60
             if diff > 15:
-                gaps.append({'from': flight_objects[i].strftime('%H:%M'), 'to': flight_objects[i+1].strftime('%H:%M'), 'duration': int(diff)})
-
-        peak_info = None
-        if hourly_stats:
-            p_hour = max(hourly_stats, key=hourly_stats.get)
-            peak_info = {'start': f"{p_hour:02d}:00", 'end': f"{p_hour+1:02d}:00", 'count': hourly_stats[p_hour]}
+                gaps.append({
+                    'from': format_time_12h(flight_objects[i]),
+                    'to': format_time_12h(flight_objects[i+1]),
+                    'duration': int(diff)
+                })
 
         results = {
             'flights': flights_list,
             'gaps': gaps,
             'peak': peak_info,
+            'max_hourly_pax': max(hourly_pax.values() or [0]),
             'needed_counters': math.ceil(max(hourly_pax.values() or [0]) / 60),
-            'max_pax': max(hourly_pax.values() or [0]),
             'active_counters': active_counters
         }
 
