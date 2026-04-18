@@ -6,25 +6,25 @@
     <title>لوحة عمليات صالة ١</title>
     <style>
         :root { --bg: #0F1114; --card: #1C1E23; --accent: #3F51B5; --success: #00E676; --danger: #FF5252; --text-dim: #888; }
-        body { font-family: 'Segoe UI', sans-serif; background: var(--bg); color: white; margin: 0; display: flex; justify-content: center; min-height: 100vh; }
+        body { font-family: 'Segoe UI', Tahoma, sans-serif; background: var(--bg); color: white; margin: 0; display: flex; justify-content: center; min-height: 100vh; }
         .container { width: 100%; max-width: 480px; padding: 15px; box-sizing: border-box; }
-        .menu-btn { background: var(--card); border: 1px solid #333; padding: 22px; border-radius: 18px; color: white; width: 100%; margin-bottom: 12px; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 15px; font-size: 1.1rem; }
+        .menu-btn { background: var(--card); border: 1px solid #333; padding: 22px; border-radius: 18px; color: white; width: 100%; margin-bottom: 12px; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 15px; font-size: 1.1rem; border: none; }
         .page-card { background: var(--card); border-radius: 24px; padding: 20px; border: 1px solid #333; }
         .back-btn { color: var(--accent); text-decoration: none; font-weight: bold; font-size: 0.9rem; display: block; margin-bottom: 15px; }
         input { background: #000; border: 1px solid #444; color: white; padding: 14px; border-radius: 12px; width: 100%; box-sizing: border-box; margin-bottom: 10px; text-align: center; }
         .btn-action { background: var(--accent); border: none; color: white; padding: 16px; border-radius: 12px; width: 100%; cursor: pointer; font-weight: bold; }
         table { width: 100%; border-collapse: collapse; margin-top: 20px; }
         th { color: var(--text-dim); font-size: 0.75rem; border-bottom: 1px solid #333; padding: 10px 5px; text-align: right; }
-        td { padding: 15px 5px; border-bottom: 1px solid #222; font-size: 0.9rem; vertical-align: middle; }
-        .belt-badge { background: #2d3038; color: var(--success); padding: 5px 10px; border-radius: 8px; font-weight: bold; }
-        .flight-code { color: #82B1FF; font-weight: bold; font-size: 1.1rem; display: block; }
-        .pax-count { color: var(--success); font-size: 0.8rem; margin-top: 2px; display: block; }
+        td { padding: 15px 5px; border-bottom: 1px solid #222; font-size: 0.9rem; }
+        .belt-badge { background: #2d3038; color: var(--success); padding: 5px 12px; border-radius: 8px; font-weight: bold; }
+        .flight-code { color: #82B1FF; font-weight: bold; font-size: 1.1rem; }
+        .pax-count { color: var(--success); font-size: 0.8rem; display: block; margin-top: 3px; }
     </style>
 </head>
 <body>
 <div class="container">
     {% if view_type == 'main' %}
-        <h2 style="text-align: center; margin: 40px 0;">لوحة عمليات صالة ١</h2>
+        <h2 style="text-align: center; margin: 40px 0; font-weight: 400;">لوحة عمليات صالة ١</h2>
         <form method="POST"><input type="hidden" name="view_type" value="arrival"><button class="menu-btn">🛬 <b>رحلات الوصول</b></button></form>
         <form method="POST"><input type="hidden" name="view_type" value="peak"><button class="menu-btn">📊 <b>ذروة الرحلات</b></button></form>
         <form method="POST"><input type="hidden" name="view_type" value="analysis"><button class="menu-btn">🔍 <b>تحليل الكاونترات</b></button></form>
@@ -58,7 +58,7 @@
                                 </td>
                                 <td>
                                     <b>{{ f.origin_city }}</b><br>
-                                    <small style="color:var(--text-dim)">{{ f.origin_iata }} | {{ f.ac }}</small>
+                                    <small style="color:var(--text-dim)">{{ f.origin_iata }}</small>
                                 </td>
                                 <td style="text-align:center;"><span class="belt-badge">{{ f.belt }}</span></td>
                                 <td style="font-weight: bold;">{{ f.time }}</td>
@@ -69,23 +69,26 @@
                 {% elif view_type == 'peak' %}
                     <div style="margin-top:25px; text-align:center;">
                         <div style="background:rgba(255,82,82,0.1); padding:20px; border-radius:15px; border:1px solid var(--danger);">
-                            <small>ساعة الذروة المتوقعة</small><br>
+                            <small>ساعة الذروة القصوى</small><br>
                             <b style="font-size:1.4rem; color:var(--danger);">{{ results.peak.start }} - {{ results.peak.end }}</b>
                         </div>
-                        <h4 style="text-align:right; margin-top:25px;">الفجوات المتاحة:</h4>
+                        <h4 style="text-align:right; margin-top:25px;">الفجوات المتاحة (>15 د):</h4>
                         {% for gap in results.gaps %}
                             <div style="background:#000; padding:12px; border-radius:10px; margin-bottom:8px; display:flex; justify-content:space-between; border-right:4px solid var(--success);">
-                                <span>من {{ gap.from }} إلى {{ gap.to }}</span>
+                                <span>{{ gap.from }} ➜ {{ gap.to }}</span>
                                 <span style="color:var(--success)">{{ gap.duration }} دقيقة</span>
                             </div>
                         {% endfor %}
                     </div>
                 {% elif view_type == 'analysis' %}
-                    <div style="margin-top:25px; text-align:center;">
-                        <div style="background:#000; padding:30px; border-radius:20px;">
-                            <small style="color:var(--text-dim);">الاحتياج التشغيلي (كاونتر)</small>
-                            <h1 style="color:var(--success); font-size:4rem; margin:10px 0;">{{ results.needed_counters }}</h1>
-                        </div>
+                    <div style="margin-top:25px; text-align:center; background:#000; padding:30px; border-radius:20px;">
+                        <small style="color:var(--text-dim);">الاحتياج التشغيلي (كاونتر)</small>
+                        <h1 style="color:var(--success); font-size:4rem; margin:10px 0;">{{ results.needed_counters }}</h1>
+                        {% if results.active_counters > 0 %}
+                            <div style="color: {{ 'var(--success)' if results.active_counters >= results.needed_counters else 'var(--danger)' }}">
+                                {{ '✅ العدد كافٍ' if results.active_counters >= results.needed_counters else '⚠️ نقص ' ~ (results.needed_counters - results.active_counters) ~ ' كاونتر' }}
+                            </div>
+                        {% endif %}
                     </div>
                 {% endif %}
             {% endif %}
