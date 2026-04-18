@@ -54,7 +54,7 @@ def index():
         flights_list = []
         hourly_stats = Counter()
         hourly_pax = Counter()
-        flight_objects = [] # لمقارنة الفجوات
+        flight_objects = []
 
         for f in data:
             status_code = f.get('PublicRemark', {}).get('Code', '').upper()
@@ -62,17 +62,11 @@ def index():
             
             dt_raw = f.get('EarlyOrDelayedDateTime').split('+')[0]
             dt_obj = datetime.fromisoformat(dt_raw)
-            
             pax = analyzer.get_dynamic_capacity(f.get('AircraftType'))
             
-            # جلب البيانات المطلوبة بدقة
-            fn = f.get('FlightNumber', '---')
-            city_ar = f.get('OriginAirportArabicName') or "غير معروف"
-            iata = f.get('OriginAirportIataCode') or "???"
-            
             flights_list.append({
-                'fn': fn,
-                'origin': f"{city_ar} - {iata}",
+                'fn': f.get('FlightNumber', '---'),
+                'origin': f"{f.get('OriginAirportArabicName') or 'غير معروف'} - {f.get('OriginAirportIataCode') or '???'}",
                 'time': dt_obj.strftime('%H:%M'),
                 'pax': pax,
                 'ac': f.get('AircraftType', ''),
@@ -83,7 +77,6 @@ def index():
             hourly_pax[dt_obj.hour] += pax
             flight_objects.append(dt_obj)
 
-        # حساب الفجوات الزمنية (لصفحة الذروة)
         flight_objects.sort()
         gaps = []
         for i in range(len(flight_objects) - 1):
@@ -91,7 +84,6 @@ def index():
             if diff > 15:
                 gaps.append({'from': flight_objects[i].strftime('%H:%M'), 'to': flight_objects[i+1].strftime('%H:%M'), 'duration': int(diff)})
 
-        # تحديد وقت الذروة
         peak_info = None
         if hourly_stats:
             p_hour = max(hourly_stats, key=hourly_stats.get)
@@ -108,3 +100,6 @@ def index():
         }
 
     return render_template('index.html', results=results, current_date=current_date, start_h=start_h, end_h=end_h, view_type=view_type)
+
+if __name__ == '__main__':
+    app.run(debug=True)
