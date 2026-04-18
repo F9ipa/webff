@@ -10,43 +10,56 @@
         .container { width: 100%; max-width: 500px; padding: 15px; box-sizing: border-box; }
         .menu-btn { background: var(--card); border: 1px solid #333; padding: 20px; border-radius: 15px; color: white; width: 100%; margin-bottom: 12px; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 15px; font-size: 1.1rem; }
         .icon { font-size: 1.4rem; background: #2d3038; padding: 8px; border-radius: 10px; display: flex; }
-        .page-card { background: var(--card); border-radius: 20px; padding: 15px; border: 1px solid #333; width: 100%; }
-        input { background: #000; border: 1px solid #444; color: white; padding: 12px; border-radius: 10px; width: 100%; box-sizing: border-box; margin-bottom: 10px; text-align: center; }
-        .btn-action { background: var(--accent); border: none; color: white; padding: 15px; border-radius: 10px; width: 100%; cursor: pointer; font-weight: bold; }
-        table { width: 100%; border-collapse: collapse; margin-top: 15px; }
+        .page-card { background: var(--card); border-radius: 20px; padding: 20px; border: 1px solid #333; width: 100%; }
+        input { background: #000; border: 1px solid #444; color: white; padding: 12px; border-radius: 10px; width: 100%; box-sizing: border-box; margin-bottom: 10px; text-align: center; font-size: 1rem; }
+        .btn-action { background: var(--accent); border: none; color: white; padding: 15px; border-radius: 10px; width: 100%; cursor: pointer; font-weight: bold; margin-top: 5px; }
+        table { width: 100%; border-collapse: collapse; margin-top: 20px; }
         th { color: #888; font-size: 0.75rem; border-bottom: 1px solid #333; padding: 10px 5px; text-align: right; }
-        td { padding: 12px 5px; border-bottom: 1px solid #222; font-size: 0.85rem; }
-        .belt-badge { background: #2d3038; color: var(--success); padding: 4px 8px; border-radius: 6px; font-weight: bold; }
-        .gap-box { background: rgba(0,230,118,0.1); padding: 12px; border-radius: 12px; margin-top: 10px; display: flex; justify-content: space-between; border-right: 4px solid var(--success); }
+        td { padding: 15px 5px; border-bottom: 1px solid #222; font-size: 0.9rem; }
+        .belt-badge { background: #2d3038; color: var(--success); padding: 5px 10px; border-radius: 8px; font-weight: bold; }
+        .gap-box { background: rgba(0,230,118,0.1); padding: 15px; border-radius: 12px; margin-top: 10px; display: flex; justify-content: space-between; border-right: 4px solid var(--success); }
     </style>
 </head>
 <body>
 <div class="container">
     {% if view_type == 'main' %}
-        <h2 style="text-align: center;">لوحة عمليات صالة ١</h2>
+        <h2 style="text-align: center; margin-bottom: 30px;">لوحة عمليات صالة ١</h2>
         <form method="POST"><input type="hidden" name="view_type" value="arrival"><button class="menu-btn"><span class="icon">🛬</span><b>رحلات الوصول</b></button></form>
         <form method="POST"><input type="hidden" name="view_type" value="peak"><button class="menu-btn"><span class="icon">📊</span><b>ذروة الرحلات</b></button></form>
         <form method="POST"><input type="hidden" name="view_type" value="analysis"><button class="menu-btn"><span class="icon">🔍</span><b>تحليل الكاونترات</b></button></form>
     {% else %}
         <div class="page-card">
-            <a href="/" style="color:var(--accent); text-decoration:none;">🔙 العودة للرئيسية</a>
-            <form method="POST" style="margin-top:15px;">
+            <a href="/" style="color:var(--accent); text-decoration:none; font-weight:bold;">🔙 العودة للرئيسية</a>
+            
+            <form method="POST" style="margin-top:20px;">
                 <input type="hidden" name="view_type" value="{{ view_type }}">
-                <div style="display:flex; gap:10px;"><input type="time" name="start_time" value="{{ start_h }}"><input type="time" name="end_time" value="{{ end_h }}"></div>
-                {% if view_type == 'analysis' %}<input type="number" name="active_counters" placeholder="عدد الكاونترات..." value="{{ results.active_counters if results else '' }}">{% endif %}
+                <div style="display:flex; gap:10px;">
+                    <input type="time" name="start_time" value="{{ start_h }}">
+                    <input type="time" name="end_time" value="{{ end_h }}">
+                </div>
+                {% if view_type == 'analysis' %}
+                    <input type="number" name="active_counters" placeholder="عدد الكاونترات الحالية..." value="{{ results.active_counters if results else '' }}">
+                {% endif %}
                 <button type="submit" class="btn-action">تحديث البيانات</button>
             </form>
 
             {% if results %}
                 {% if view_type == 'arrival' %}
                     <table>
-                        <thead><tr><th>معلومات الرحلة</th><th>جهة القدوم</th><th>سير الشنط</th><th>وقت الوصول</th></tr></thead>
+                        <thead>
+                            <tr>
+                                <th>معلومات الرحلة</th>
+                                <th>جهة القدوم</th>
+                                <th style="text-align:center;">سير الشنط</th>
+                                <th>وقت الوصول</th>
+                            </tr>
+                        </thead>
                         <tbody>
                             {% for f in results.flights %}
                             <tr>
                                 <td><b style="color:var(--accent)">{{ f.flight_full }}</b><br><small style="color:var(--success)">{{ f.pax }} راكب</small></td>
-                                <td>{{ f.origin_city }}<br><small style="color:#777">{{ f.origin_iata }}</small></td>
-                                <td><span class="belt-badge">{{ f.belt }}</span></td>
+                                <td>{{ f.origin_city }}<br><small style="color:#888">{{ f.origin_iata }}</small></td>
+                                <td style="text-align:center;"><span class="belt-badge">{{ f.belt }}</span></td>
                                 <td><b>{{ f.time }}</b></td>
                             </tr>
                             {% endfor %}
@@ -54,29 +67,42 @@
                     </table>
 
                 {% elif view_type == 'peak' %}
-                    <div style="margin-top:20px;">
+                    <div style="margin-top:25px;">
                         {% if results.peak %}
-                        <div style="background:var(--danger); padding:15px; border-radius:15px; text-align:center;">
-                            <b>وقت الذروة القصوى</b><br>
-                            <span>{{ results.peak.start }} - {{ results.peak.end }} ({{ results.peak.count }} رحلات)</span>
+                        <div style="background:var(--danger); padding:20px; border-radius:15px; text-align:center;">
+                            <small>ساعة الذروة المتوقعة</small><br>
+                            <b style="font-size:1.3rem;">{{ results.peak.start }} - {{ results.peak.end }}</b><br>
+                            <span>إجمالي: {{ results.peak.count }} رحلة</span>
                         </div>
                         {% endif %}
-                        <h4 style="margin-top:20px;">الفجوات الزمنية المتاحة:</h4>
+
+                        <h4 style="margin-top:30px; border-bottom:1px solid #333; padding-bottom:10px;">الفجوات الزمنية المتاحة:</h4>
                         {% for gap in results.gaps %}
-                        <div class="gap-box"><span>{{ gap.from }} ➜ {{ gap.to }}</span><span style="color:var(--success)">{{ gap.duration }} دقيقة</span></div>
+                        <div class="gap-box">
+                            <span>من {{ gap.from }} إلى {{ gap.to }}</span>
+                            <span style="color:var(--success)">{{ gap.duration }} دقيقة</span>
+                        </div>
+                        {% else %}
+                        <p style="text-align:center; color:#888;">لا توجد فجوات كبيرة حالياً</p>
                         {% endfor %}
                     </div>
 
                 {% elif view_type == 'analysis' %}
-                    <div style="margin-top:20px; text-align:center; background:#000; padding:20px; border-radius:15px;">
-                        <small>الاحتياج الفعلي للكاونترات</small>
-                        <h1 style="color:var(--success); margin:10px 0;">{{ results.needed_counters }}</h1>
+                    <div style="margin-top:25px; text-align:center;">
+                        <div style="background:#000; padding:30px; border-radius:20px; border:1px dashed #444;">
+                            <small style="color:#888;">الاحتياج بناءً على {{ results.max_hourly_pax }} راكب/ساعة</small>
+                            <h1 style="color:var(--success); font-size:3.5rem; margin:15px 0;">{{ results.needed_counters }}</h1>
+                            <b>كاونتر مطلوب</b>
+                        </div>
+                        
                         {% if results.active_counters > 0 %}
-                            {% if results.active_counters < results.needed_counters %}
-                                <p style="color:var(--danger)">⚠️ نقص: تحتاج {{ results.needed_counters - results.active_counters }} إضافية</p>
-                            {% else %}
-                                <p style="color:var(--success)">✅ الوضع ممتاز</p>
-                            {% endif %}
+                            <div style="margin-top:20px; padding:15px; border-radius:10px; background: {{ 'rgba(0,230,118,0.1)' if results.active_counters >= results.needed_counters else 'rgba(255,82,82,0.1)' }}">
+                                {% if results.active_counters < results.needed_counters %}
+                                    <span style="color:var(--danger)">⚠️ يوجد نقص بـ {{ results.needed_counters - results.active_counters }} كاونتر</span>
+                                {% else %}
+                                    <span style="color:var(--success)">✅ العدد الحالي كافٍ للمهمة</span>
+                                {% endif %}
+                            </div>
                         {% endif %}
                     </div>
                 {% endif %}
