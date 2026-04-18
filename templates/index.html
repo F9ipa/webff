@@ -2,33 +2,155 @@
 <html lang="ar" dir="rtl">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>نظام الصالة ١</title>
     <style>
-        :root { --bg: #0F1114; --card: #1C1E23; --accent: #3F51B5; --success: #00E676; --danger: #FF5252; }
-        body { font-family: 'Segoe UI', sans-serif; background: var(--bg); color: white; padding: 15px; text-align: right; }
-        .container { max-width: 500px; margin: auto; }
-        .page-card { background: var(--card); border-radius: 20px; padding: 20px; border: 1px solid #333; }
-        .menu-btn { background: var(--card); border: 1px solid #333; padding: 20px; border-radius: 15px; color: white; width: 100%; margin-bottom: 10px; cursor: pointer; text-align: right; display: flex; align-items: center; }
-        .icon { font-size: 1.5rem; margin-left: 15px; background: #2d3038; padding: 10px; border-radius: 10px; }
-        input { background: #000; border: 1px solid #444; color: white; padding: 12px; border-radius: 10px; width: 100%; box-sizing: border-box; margin-bottom: 10px; }
-        .btn-action { background: var(--accent); border: none; color: white; padding: 15px; border-radius: 10px; width: 100%; cursor: pointer; font-weight: bold; }
+        :root { 
+            --bg: #0F1114; 
+            --card: #1C1E23; 
+            --accent: #3F51B5; 
+            --success: #00E676; 
+            --danger: #FF5252; 
+        }
+        
+        body { 
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
+            background: var(--bg); 
+            color: white; 
+            margin: 0; 
+            display: flex;
+            align-items: center; /* توسيط عمودي */
+            justify-content: center; /* توسيط أفقي */
+            min-height: 100vh;
+        }
+
+        .container { 
+            width: 100%;
+            max-width: 450px; 
+            padding: 20px;
+            box-sizing: border-box;
+        }
+
+        h2 { text-align: center; margin-bottom: 30px; font-weight: 300; }
+
+        .menu-btn { 
+            background: var(--card); 
+            border: 1px solid #333; 
+            padding: 18px; 
+            border-radius: 15px; 
+            color: white; 
+            width: 100%; 
+            margin-bottom: 15px; 
+            cursor: pointer; 
+            display: flex; 
+            align-items: center; 
+            justify-content: center; /* جعل النص في المنتصف */
+            gap: 15px;
+            font-size: 1.1rem;
+            transition: transform 0.2s, background 0.2s;
+        }
+
+        .menu-btn:active { transform: scale(0.96); background: #252830; }
+
+        .icon { 
+            font-size: 1.4rem; 
+            background: #2d3038; 
+            padding: 8px; 
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .page-card { 
+            background: var(--card); 
+            border-radius: 20px; 
+            padding: 20px; 
+            border: 1px solid #333;
+            width: 100%;
+        }
+
+        input { 
+            background: #000; 
+            border: 1px solid #444; 
+            color: white; 
+            padding: 12px; 
+            border-radius: 10px; 
+            width: 100%; 
+            box-sizing: border-box; 
+            margin-bottom: 10px; 
+            text-align: center;
+        }
+
+        .btn-action { 
+            background: var(--accent); 
+            border: none; 
+            color: white; 
+            padding: 15px; 
+            border-radius: 10px; 
+            width: 100%; 
+            cursor: pointer; 
+            font-weight: bold;
+            font-size: 1rem;
+        }
+
         table { width: 100%; border-collapse: collapse; margin-top: 20px; }
-        th { color: #888; font-size: 0.8rem; border-bottom: 1px solid #333; padding: 10px 5px; }
+        th { color: #888; font-size: 0.8rem; border-bottom: 1px solid #333; padding: 10px 5px; text-align: right; }
         td { padding: 12px 5px; border-bottom: 1px solid #222; font-size: 0.9rem; }
-        .gap-box { background: rgba(0,230,118,0.1); padding: 10px; border-radius: 10px; margin-top: 5px; display: flex; justify-content: space-between; }
+        
+        .gap-box { 
+            background: rgba(0,230,118,0.1); 
+            padding: 12px; 
+            border-radius: 12px; 
+            margin-top: 10px; 
+            display: flex; 
+            justify-content: space-between; 
+            border-right: 4px solid var(--success);
+        }
+
+        .back-link {
+            display: inline-block;
+            color: var(--accent);
+            text-decoration: none;
+            margin-bottom: 15px;
+            font-size: 0.9rem;
+        }
     </style>
 </head>
 <body>
 
 <div class="container">
     {% if view_type == 'main' %}
-        <h2 style="text-align: center;">لوحة عمليات صالة ١</h2>
-        <form method="POST"><input type="hidden" name="view_type" value="arrival"><button class="menu-btn"><span class="icon">🛬</span><b>رحلات الوصول</b></button></form>
-        <form method="POST"><input type="hidden" name="view_type" value="peak"><button class="menu-btn"><span class="icon">📊</span><b>ذروة الرحلات</b></button></form>
-        <form method="POST"><input type="hidden" name="view_type" value="analysis"><button class="menu-btn"><span class="icon">🔍</span><b>تحليل الكاونترات</b></button></form>
+        <h2>لوحة عمليات صالة ١</h2>
+        
+        <form method="POST">
+            <input type="hidden" name="view_type" value="arrival">
+            <button class="menu-btn">
+                <span class="icon">🛬</span>
+                <b>رحلات الوصول</b>
+            </button>
+        </form>
+
+        <form method="POST">
+            <input type="hidden" name="view_type" value="peak">
+            <button class="menu-btn">
+                <span class="icon">📊</span>
+                <b>ذروة الرحلات</b>
+            </button>
+        </form>
+
+        <form method="POST">
+            <input type="hidden" name="view_type" value="analysis">
+            <button class="menu-btn">
+                <span class="icon">🔍</span>
+                <b>تحليل الكاونترات</b>
+            </button>
+        </form>
+
     {% else %}
         <div class="page-card">
-            <button onclick="window.location.href='/'" style="background:none; border:none; color:var(--accent); cursor:pointer; margin-bottom:15px;">🔙 العودة للرئيسية</button>
+            <a href="/" class="back-link">🔙 العودة للرئيسية</a>
+            
             <form method="POST">
                 <input type="hidden" name="view_type" value="{{ view_type }}">
                 <div style="display:flex; gap:10px;">
@@ -36,7 +158,7 @@
                     <input type="time" name="end_time" value="{{ end_h }}">
                 </div>
                 {% if view_type == 'analysis' %}
-                    <label style="font-size: 0.8rem; color: #888;">عدد كاونترات الصالة الفعالة</label>
+                    <label style="font-size: 0.8rem; color: #888; display: block; margin-bottom: 5px;">عدد الكاونترات الفعالة حالياً</label>
                     <input type="number" name="active_counters" placeholder="أدخل العدد..." value="{{ results.active_counters if results else '' }}">
                 {% endif %}
                 <button type="submit" class="btn-action">تحديث البيانات</button>
@@ -45,7 +167,7 @@
             {% if results %}
                 {% if view_type == 'arrival' %}
                     <table>
-                        <thead><tr><th>رمز الرحلة</th><th>قادمة من</th><th>الوقت</th></tr></thead>
+                        <thead><tr><th>الرحلة</th><th>المصدر</th><th>الوقت</th></tr></thead>
                         <tbody>
                             {% for f in results.flights %}
                             <tr>
@@ -61,28 +183,34 @@
                     <div style="margin-top:20px;">
                         {% if results.peak %}
                         <div style="background:var(--danger); padding:15px; border-radius:15px; text-align:center;">
-                            <b>وقت الذروة القصوى</b><br>
-                            <span>من {{ results.peak.start }} إلى {{ results.peak.end }} ({{ results.peak.count }} رحلات)</span>
+                            <small>وقت الذروة القصوى</small><br>
+                            <b style="font-size: 1.2rem;">{{ results.peak.start }} - {{ results.peak.end }}</b><br>
+                            <span>({{ results.peak.count }} رحلات)</span>
                         </div>
                         {% endif %}
-                        <h4 style="margin-top:20px;">الفجوات الزمنية المتاحة:</h4>
+                        
+                        <h4 style="margin-top:25px; border-bottom: 1px solid #333; padding-bottom: 10px;">الفجوات الزمنية (>15 دقيقة):</h4>
                         {% for gap in results.gaps %}
                         <div class="gap-box">
                             <span>{{ gap.from }} ➜ {{ gap.to }}</span>
-                            <span style="color:var(--success)">{{ gap.duration }} دقيقة فجوة</span>
+                            <span style="color:var(--success)">{{ gap.duration }} دقيقة</span>
                         </div>
                         {% endfor %}
                     </div>
 
                 {% elif view_type == 'analysis' %}
-                    <div style="margin-top:20px; text-align:center; background:#000; padding:20px; border-radius:15px;">
-                        <small>الاحتياج الفعلي للكاونترات</small>
-                        <h1 style="color:var(--success); margin:10px 0;">{{ results.needed_counters }}</h1>
+                    <div style="margin-top:20px; text-align:center; background:#000; padding:25px; border-radius:20px; border: 1px dashed #444;">
+                        <small style="color: #888;">الاحتياج الفعلي للكاونترات</small>
+                        <h1 style="color:var(--success); margin:15px 0; font-size: 3rem;">{{ results.needed_counters }}</h1>
                         {% if results.active_counters > 0 %}
                             {% if results.active_counters < results.needed_counters %}
-                                <p style="color:var(--danger)">⚠️ نقص: تحتاج {{ results.needed_counters - results.active_counters }} إضافية</p>
+                                <div style="background: rgba(255,82,82,0.1); padding: 10px; border-radius: 10px; color: var(--danger);">
+                                    ⚠️ نقص: تحتاج {{ results.needed_counters - results.active_counters }} كاونتر إضافي
+                                </div>
                             {% else %}
-                                <p style="color:var(--success)">✅ الوضع ممتاز</p>
+                                <div style="background: rgba(0,230,118,0.1); padding: 10px; border-radius: 10px; color: var(--success);">
+                                    ✅ الوضع التشغيلي ممتاز
+                                </div>
                             {% endif %}
                         {% endif %}
                     </div>
@@ -91,5 +219,6 @@
         </div>
     {% endif %}
 </div>
+
 </body>
 </html>
