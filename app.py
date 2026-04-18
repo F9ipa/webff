@@ -57,25 +57,32 @@ def index():
         flight_objects = []
 
         for f in data:
-            status_code = f.get('PublicRemark', {}).get('Code', '').upper()
+            # فلترة الرحلات التي وصلت فعلياً
+            status_info = f.get('PublicRemark', {})
+            status_code = status_info.get('Code', '').upper() if status_info else ''
             if status_code in ['ARR', 'DLV', 'LND']: continue 
             
             dt_raw = f.get('EarlyOrDelayedDateTime').split('+')[0]
             dt_obj = datetime.fromisoformat(dt_raw)
             pax = analyzer.get_dynamic_capacity(f.get('AircraftType'))
             
-            # تصحيح جلب البيانات بناءً على الـ API الفعلي
-            airline = f.get('AirlineCode', '')
-            f_num = f.get('FlightNumber', '')
+            # --- إصلاح جلب البيانات من الـ API ---
+            # رمز الطيران (تحتاج أحياناً للوصول لـ Airline/Code)
+            airline = f.get('AirlineCode') or ""
+            f_num = f.get('FlightNumber') or ""
             
-            # جلب السير من الحقل الصحيح (BaggageReclaim -> BaggageReclaimId)
-            baggage_info = f.get('BaggageReclaim', {})
-            belt = baggage_info.get('BaggageReclaimId') if baggage_info else '---'
+            # جهة القدوم
+            city_ar = f.get('OriginAirportArabicName') or "غير معروف"
+            iata = f.get('OriginAirportIataCode') or "???"
+            
+            # سير الشنط (BaggageReclaim هو Object)
+            baggage = f.get('BaggageReclaim')
+            belt = baggage.get('BaggageReclaimId') if baggage else "---"
             
             flights_list.append({
                 'flight_full': f"{airline}{f_num}", 
-                'origin_city': f.get('OriginAirportArabicName') or "غير معروف",
-                'origin_iata': f.get('OriginAirportIataCode') or "???",
+                'origin_city': city_ar,
+                'origin_iata': iata,
                 'time': dt_obj.strftime('%H:%M'),
                 'pax': pax,
                 'belt': belt,
@@ -86,6 +93,7 @@ def index():
             hourly_pax[dt_obj.hour] += pax
             flight_objects.append(dt_obj)
 
+        # حساب الفجوات لـ "ذروة الرحلات"
         flight_objects.sort()
         gaps = []
         for i in range(len(flight_objects) - 1):
@@ -93,6 +101,7 @@ def index():
             if diff > 15:
                 gaps.append({'from': flight_objects[i].strftime('%H:%M'), 'to': flight_objects[i+1].strftime('%H:%M'), 'duration': int(diff)})
 
+        # حساب وقت الذروة
         peak_info = None
         if hourly_stats:
             p_hour = max(hourly_stats, key=hourly_stats.get)
@@ -104,6 +113,7 @@ def index():
             'total_pax': sum(hourly_pax.values()),
             'gaps': gaps,
             'peak': peak_info,
+            'max_hourly_pax': max(hourly_pax.values() or [0]),
             'needed_counters': math.ceil(max(hourly_pax.values() or [0]) / 60),
             'active_counters': active_counters
         }
