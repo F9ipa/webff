@@ -40,8 +40,8 @@ def index():
     
     results = None
     view_type = request.form.get('view_type', 'main')
-    # استرجاع الوقت من المدخلات أو وضع قيم افتراضية
-    start_h = request.form.get('start_time', '00:00')
+    # وقت البداية الافتراضي (الآن) ووقت النهاية (نهاية اليوم)
+    start_h = request.form.get('start_time', now.strftime('%H:%M'))
     end_h = request.form.get('end_time', '23:59')
 
     if request.method == 'POST' and view_type != 'main':
@@ -84,7 +84,6 @@ def index():
                 flight_objects.append(dt_obj)
             except: continue
 
-        # حساب ساعة الذروة
         peak_info = None
         if hourly_stats:
             p_hour = max(hourly_stats, key=hourly_stats.get)
@@ -94,7 +93,6 @@ def index():
                 'count': hourly_stats[p_hour]
             }
 
-        # حساب الفجوات (أكثر من 15 دقيقة)
         flight_objects.sort()
         gaps = []
         for i in range(len(flight_objects) - 1):
