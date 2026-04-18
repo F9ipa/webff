@@ -8,6 +8,7 @@ app = Flask(__name__)
 
 class FlightAnalyzer:
     def __init__(self):
+        # الرابط الرسمي لـ API مطار الملك عبدالعزيز
         self.url = "https://www.kaia.sa/ext-api/flightsearch/flights"
         self.headers = {
             "Accept": "application/json",
@@ -16,6 +17,7 @@ class FlightAnalyzer:
         }
 
     def fetch_data(self, start_dt, end_dt):
+        # الفلترة المطلوبة: الرحلات الدولية القادمة لصالة 1
         params = {
             "$filter": f"(EarlyOrDelayedDateTime ge {start_dt} and EarlyOrDelayedDateTime lt {end_dt}) and PublicRemark/Code ne 'NOP' and tolower(FlightNature) eq 'arrival' and Terminal eq 'T1' and (tolower(InternationalStatus) eq 'international')",
             "$orderby": "EarlyOrDelayedDateTime",
@@ -54,11 +56,11 @@ def index():
 
         for f in data:
             try:
-                # استخراج الوقت
+                # معالجة الوقت
                 dt_raw = f.get('EarlyOrDelayedDateTime', '').split('+')[0]
                 dt_obj = datetime.fromisoformat(dt_raw)
                 
-                # استخراج البيانات من الكائنات المتداخلة (Nested Objects)
+                # استخراج البيانات من الكائنات المتداخلة (Objects) لضمان ظهورها
                 airline_info = f.get('Airline') or {}
                 origin_info = f.get('OriginAirport') or {}
                 baggage_info = f.get('BaggageReclaim') or {}
@@ -67,16 +69,16 @@ def index():
                 a_code = airline_info.get('Code') or f.get('AirlineCode') or ""
                 f_num = f.get('FlightNumber') or ""
                 
-                # 2. جهة القدوم
+                # 2. جهة القدوم (المدينة والرمز)
                 city_ar = origin_info.get('ArabicName') or f.get('OriginAirportArabicName') or "غير معروف"
                 iata = origin_info.get('IataCode') or f.get('OriginAirportIataCode') or "???"
                 
                 # 3. سير الشنط
                 belt = baggage_info.get('BaggageReclaimId') or "---"
 
-                # حساب الركاب التقديري
+                # حساب الركاب التقديري بناءً على نوع الطائرة
                 ac_type = f.get('AircraftType', '')
-                pax = 300 if any(x in str(ac_type) for x in ['777', '787', '330', '350']) else 170
+                pax = 300 if any(x in str(ac_type) for x in ['777', '787', '330', '350', '380']) else 170
 
                 flights_list.append({
                     'flight_full': f"{a_code} {f_num}".strip(),
