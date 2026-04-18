@@ -3,36 +3,161 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>الرحلات الدولية صالة ١ 🛬</title>
+    <title>الرحلات الدولية القادمة</title>
     <style>
-        body { font-family: 'Segoe UI', Tahoma, sans-serif; background-color: #121212; color: #e0e0e0; text-align: center; padding: 20px; margin: 0; }
+        /* تعريف متغيرات الألوان بناءً على طلبك */
+        :root {
+            --bg-deep: #1A1B1E;       /* لون الخلفية في صورتك */
+            --card-inner: #242529;    /* لون أفتح قليلاً للبطاقة */
+            --accent-grey: #4A5056;   /* لون المربع في صورتك */
+            --text-silver: #E3E3E3;   /* لون الخط في الجدول */
+            --text-dim: #C0C1C3;      /* لون الخط في صورتك */
+            --success: #81c784;       /* أخضر هادئ للرحلات */
+            --danger: #e57373;        /* أحمر هادئ للمتأخرات */
+        }
+
+        body { 
+            font-family: 'Segoe UI', Tahoma, sans-serif; 
+            background-color: var(--bg-deep); 
+            color: var(--text-silver); 
+            text-align: center; 
+            padding: 20px; 
+            margin: 0; 
+        }
+
         .container { max-width: 500px; margin: auto; }
-        .back-btn { display: inline-flex; align-items: center; gap: 5px; color: #bbb; text-decoration: none; font-size: 0.9rem; margin-bottom: 15px; background: #252525; padding: 8px 15px; border-radius: 10px; border: 1px solid #333; cursor: pointer; }
-        .card { background: #1e1e1e; padding: 25px; border-radius: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); border: 1px solid #333; }
-        h2 { color: #ffffff; margin-bottom: 5px; font-size: 1.6rem; }
-        .date-badge { background: #333; color: #bbb; padding: 5px 15px; border-radius: 50px; font-size: 0.85rem; display: inline-block; margin-bottom: 20px; }
+
+        .back-btn { 
+            display: inline-flex; 
+            align-items: center; 
+            color: var(--text-dim); 
+            text-decoration: none; 
+            font-size: 1.2rem; 
+            margin-bottom: 15px; 
+            background: var(--accent-grey); 
+            padding: 5px 20px; 
+            border-radius: 10px; 
+            cursor: pointer;
+            border: none;
+        }
+
+        .card { 
+            background: var(--card-inner); 
+            padding: 25px; 
+            border-radius: 24px; 
+            box-shadow: 0 15px 35px rgba(0,0,0,0.6); 
+            border: 1px solid #333; 
+        }
+
+        h2 { color: #ffffff; margin-bottom: 5px; font-size: 1.5rem; font-weight: 600; }
+
+        .date-badge { 
+            background: var(--accent-grey); 
+            color: var(--text-silver); 
+            padding: 6px 16px; 
+            border-radius: 50px; 
+            font-size: 0.8rem; 
+            display: inline-block; 
+            margin-bottom: 25px;
+            opacity: 0.9;
+        }
+
         .input-group { display: flex; justify-content: center; gap: 10px; margin-bottom: 20px; }
-        input[type="time"] { padding: 12px; border-radius: 10px; border: 1px solid #444; background-color: #2c2c2c; color: white; font-size: 1rem; outline: none; width: 45%; }
-        .btn-submit { padding: 12px; background-color: #0d6efd; color: white; border: none; border-radius: 12px; cursor: pointer; font-weight: bold; font-size: 1.1rem; width: 100%; }
-        .stats { display: flex; justify-content: space-between; margin-top: 25px; flex-wrap: wrap; gap: 10px; }
-        .stat-box { background: #252525; padding: 15px; border-radius: 15px; width: 47%; text-align: center; border: 1px solid #333; box-sizing: border-box; }
-        .stat-box.peak { width: 100%; border: 1px solid #FFD700; background: #252525; padding: 20px; }
-        .stat-box h5 { margin: 0; color: #888; font-size: 0.8rem; }
-        .stat-box p { margin: 8px 0; font-size: 1.2rem; font-weight: bold; color: #bb86fc; }
-        .peak-count { background: #bb86fc; color: #121212; padding: 2px 10px; border-radius: 5px; font-size: 0.9rem; font-weight: bold; }
-        .gap-title { color: #333; margin: 25px 0 10px; font-size: 1rem; text-align: right; display: block; }
-        .gap-item { background: #2d2a1e; color: #ffd54f; padding: 12px; margin: 8px 0; border-radius: 12px; border: 1px solid #444; display: flex; justify-content: space-between; align-items: center; }
-        .gap-duration { background: rgba(255, 213, 79, 0.1); padding: 4px 10px; border-radius: 6px; font-size: 0.85rem; }
-        hr { border: 0; border-top: 1px solid #333; margin: 25px 0; }
+
+        input[type="time"] { 
+            padding: 12px; 
+            border-radius: 12px; 
+            border: 1px solid var(--accent-grey); 
+            background-color: var(--bg-deep); 
+            color: white; 
+            font-size: 1rem; 
+            outline: none; 
+            width: 45%; 
+        }
+
+        .btn-submit { 
+            padding: 14px; 
+            background-color: var(--accent-grey); 
+            color: white; 
+            border: none; 
+            border-radius: 14px; 
+            cursor: pointer; 
+            font-weight: bold; 
+            font-size: 1.1rem; 
+            width: 100%; 
+            transition: 0.3s ease;
+        }
+        
+        .btn-submit:hover { background-color: #5a626a; }
+
+        .stats { display: flex; justify-content: space-between; margin-top: 25px; flex-wrap: wrap; gap: 12px; }
+
+        .stat-box { 
+            background: var(--bg-deep); 
+            padding: 15px; 
+            border-radius: 18px; 
+            width: 47%; 
+            text-align: center; 
+            border: 1px solid #333; 
+            box-sizing: border-box; 
+        }
+
+        .stat-box.peak { 
+            width: 100%; 
+            border: 1px solid var(--accent-grey); 
+            background: rgba(74, 80, 86, 0.1); 
+        }
+
+        .stat-box h5 { margin: 0; color: var(--text-dim); font-size: 0.85rem; font-weight: normal; }
+
+        .stat-box p { margin: 8px 0; font-size: 1.4rem; font-weight: bold; }
+
+        .peak-count { 
+            background: var(--accent-grey); 
+            color: white; 
+            padding: 4px 12px; 
+            border-radius: 8px; 
+            font-size: 0.85rem; 
+        }
+
+        .gap-title { 
+            color: var(--text-dim); 
+            margin: 30px 0 10px; 
+            font-size: 0.95rem; 
+            text-align: right; 
+            display: block; 
+            padding-right: 5px;
+        }
+
+        .gap-item { 
+            background: var(--bg-deep); 
+            color: var(--text-silver); 
+            padding: 14px; 
+            margin: 10px 0; 
+            border-radius: 14px; 
+            border: 1px solid #333; 
+            display: flex; 
+            justify-content: space-between; 
+            align-items: center; 
+        }
+
+        .gap-duration { 
+            background: rgba(227, 227, 227, 0.1); 
+            color: var(--text-dim);
+            padding: 5px 12px; 
+            border-radius: 8px; 
+            font-size: 0.8rem; 
+            border: 1px solid rgba(227, 227, 227, 0.2);
+        }
+
+        hr { border: 0; border-top: 1px solid #333; margin: 30px 0; }
     </style>
 </head>
 <body>
     <div class="container">
-        {% if results %}
         <div style="text-align: right;">
-            <a href="/" class="back-btn">↩</a>
+            <a href="/" class="back-btn">🔙</a>
         </div>
-        {% endif %}
 
         <div class="card">
             <h2>رحلات الوصول صالة ١ قدوم</h2>
@@ -43,34 +168,40 @@
                     <input type="time" name="start_time" value="{{ request.form.get('start_time', '13:00') }}">
                     <input type="time" name="end_time" value="{{ request.form.get('end_time', '23:59') }}">
                 </div>
-                <button type="submit" class="btn-submit">بحث</button>
+                <button type="submit" class="btn-submit">بحث عن الرحلات</button>
             </form>
 
             {% if results %}
                 <hr>
                 <div class="stats">
-                    <div class="stat-box"><h5>الرحلات المنتظرة</h5><p style="color: #4caf50;">{{ results.count }}</p></div>
-                    <div class="stat-box"><h5>المتأخرات</h5><p style="color: #ff5252;">{{ results.delayed }}</p></div>
+                    <div class="stat-box">
+                        <h5>الرحلات المنتظرة</h5>
+                        <p style="color: var(--success);">{{ results.count }}</p>
+                    </div>
+                    <div class="stat-box">
+                        <h5>المتأخرات</h5>
+                        <p style="color: var(--danger);">{{ results.delayed }}</p>
+                    </div>
                     
                     {% if results.peak %}
                     <div class="stat-box peak">
-                        <h5>⚠️ كثافة الرحلات ⚠️</h5>
+                        <h5>⚠️ ذروة الرحلات ⚠️</h5>
                         <p>من {{ results.peak.start }} إلى {{ results.peak.end }}</p>
                         <div style="margin-top: 10px;">
-                            <span class="peak-count">عدد الرحلات: {{ results.peak.count }}</span>
+                            <span class="peak-count">العدد: {{ results.peak.count }} رحلة</span>
                         </div>
                     </div>
                     {% endif %}
                 </div>
 
-                <strong class="gap-title">اوقات لايوجد فيها رحلات</strong>
+                <strong class="gap-title">الأوقات المتاحة (بدون رحلات)</strong>
                 {% for gap in results.gaps %}
                     <div class="gap-item">
                         <span>{{ gap.from }} ← {{ gap.to }}</span>
-                        <span class="gap-duration">({{ gap.duration }} دقيقة)</span>
+                        <span class="gap-duration">{{ gap.duration }} دقيقة</span>
                     </div>
                 {% else %}
-                    <p style="color:#666; font-size: 0.9rem;">لا توجد فجوات كبيرة.</p>
+                    <p style="color: var(--text-dim); font-size: 0.9rem; margin-top: 15px;">لا توجد فجوات زمنية كبيرة حالياً.</p>
                 {% endfor %}
             {% endif %}
         </div>
