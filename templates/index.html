@@ -5,91 +5,74 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>لوحة عمليات صالة ١</title>
     <style>
-        :root { --bg: #0F1114; --card: #1C1E23; --accent: #3F51B5; --success: #00E676; --text-dim: #888; }
-        body { font-family: 'Segoe UI', sans-serif; background: var(--bg); color: white; margin: 0; display: flex; justify-content: center; }
-        .container { width: 100%; max-width: 450px; padding: 20px; }
-        .page-card { background: var(--card); border-radius: 25px; padding: 20px; border: 1px solid #333; }
-        .back-btn { color: var(--accent); text-decoration: none; font-size: 0.9rem; margin-bottom: 20px; display: block; }
+        :root { --bg: #0F1114; --card: #1C1E23; --accent: #3F51B5; --success: #00E676; --danger: #FF5252; --text-dim: #888; }
+        body { font-family: 'Segoe UI', sans-serif; background: var(--bg); color: white; margin: 0; display: flex; justify-content: center; min-height: 100vh; }
+        .container { width: 100%; max-width: 480px; padding: 15px; box-sizing: border-box; }
+        .menu-btn { background: var(--card); border: none; padding: 22px; border-radius: 18px; color: white; width: 100%; margin-bottom: 12px; cursor: pointer; font-size: 1.1rem; }
+        .page-card { background: var(--card); border-radius: 24px; padding: 20px; border: 1px solid #333; }
+        .back-btn { color: var(--accent); text-decoration: none; font-size: 0.9rem; display: block; margin-bottom: 15px; }
+        .time-inputs { display: flex; gap: 10px; margin-bottom: 15px; }
+        input[type="time"] { background: #000; border: 1px solid #444; color: white; padding: 14px; border-radius: 12px; width: 100%; text-align: center; font-size: 1rem; }
+        .btn-action { background: var(--accent); border: none; color: white; padding: 16px; border-radius: 12px; width: 100%; cursor: pointer; font-weight: bold; }
         
-        /* تصميم خانات الوقت */
-        .time-box-container { display: flex; gap: 10px; margin-bottom: 15px; }
-        .time-wrapper { flex: 1; position: relative; }
-        .time-label { font-size: 0.7rem; color: var(--text-dim); margin-bottom: 5px; display: block; text-align: center; }
-        
-        input[type="time"] { 
-            background: #000; border: 1px solid #444; color: white; padding: 12px; 
-            border-radius: 12px; width: 100%; text-align: center; font-size: 1.1rem; 
-        }
-
-        /* قفل الحقل الأيمن */
-        .readonly-time { background: #222 !important; color: #666 !important; cursor: not-allowed; border: 1px solid #222; }
-
-        .btn-update { background: var(--accent); border: none; color: white; padding: 15px; border-radius: 12px; width: 100%; font-weight: bold; cursor: pointer; }
-        
-        .analysis-display { background: #000; padding: 30px; border-radius: 20px; text-align: center; margin-top: 20px; }
-        .counter-num { color: var(--success); font-size: 5rem; font-weight: bold; margin: 10px 0; }
-        .stat-row { display: flex; justify-content: space-between; padding: 12px 0; border-bottom: 1px solid #1a1a1a; font-size: 0.95rem; }
-        .stat-label { color: var(--text-dim); }
+        /* تنسيق الجداول والقوائم */
+        table { width: 100%; border-collapse: collapse; margin-top: 15px; }
+        td { padding: 15px 5px; border-bottom: 1px solid #222; }
+        .peak-card { background: rgba(255,82,82,0.1); padding: 20px; border-radius: 15px; border: 1px solid var(--danger); text-align: center; margin-top: 20px; }
+        .gap-item { background: #000; padding: 12px; border-radius: 10px; margin-bottom: 8px; display: flex; justify-content: space-between; border-right: 4px solid var(--success); }
+        .stat-line { display: flex; justify-content: space-between; padding: 12px 0; border-bottom: 1px solid #111; color: var(--text-dim); }
     </style>
 </head>
 <body>
 <div class="container">
     {% if view_type == 'main' %}
-        <h2 style="text-align:center; margin: 50px 0;">لوحة عمليات صالة ١</h2>
-        <form method="POST"><input type="hidden" name="view_type" value="arrival"><button style="width:100%; padding:25px; margin-bottom:15px; border-radius:15px; background:var(--card); color:white; border:none; font-size:1.2rem; cursor:pointer;">🛬 رحلات الوصول</button></form>
-        <form method="POST"><input type="hidden" name="view_type" value="analysis"><button style="width:100%; padding:25px; border-radius:15px; background:var(--card); color:white; border:none; font-size:1.2rem; cursor:pointer;">🔍 تحليل الكاونترات</button></form>
+        <h2 style="text-align: center; margin: 40px 0;">لوحة عمليات صالة ١</h2>
+        <form method="POST"><input type="hidden" name="view_type" value="arrival"><button class="menu-btn">🛬 <b>رحلات الوصول</b></button></form>
+        <form method="POST"><input type="hidden" name="view_type" value="peak"><button class="menu-btn">📊 <b>ذروة الرحلات</b></button></form>
+        <form method="POST"><input type="hidden" name="view_type" value="analysis"><button class="menu-btn">🔍 <b>تحليل الكاونترات</b></button></form>
     {% else %}
         <div class="page-card">
             <a href="/" class="back-btn">🔙 العودة للرئيسية</a>
-            
             <form method="POST">
                 <input type="hidden" name="view_type" value="{{ view_type }}">
-                <div class="time-box-container">
-                    <div class="time-wrapper">
-                        <span class="time-label">إلى (تعديل)</span>
-                        <input type="time" name="end_time" value="{{ end_h }}">
-                    </div>
-                    <div class="time-wrapper">
-                        <span class="time-label">من (تلقائي)</span>
-                        <input type="time" name="start_time" value="{{ start_h }}" readonly class="readonly-time">
-                    </div>
+                <div class="time-inputs">
+                    <input type="time" name="end_time" value="{{ end_h }}">
+                    <input type="time" name="start_time" value="{{ start_h }}">
                 </div>
-                <button type="submit" class="btn-update">تحديث البيانات</button>
+                <button type="submit" class="btn-action">تحديث البيانات</button>
             </form>
 
             {% if results %}
-                {% if view_type == 'analysis' %}
-                    <div class="analysis-display">
-                        <span style="color:var(--text-dim)">الاحتياج التشغيلي (كاونتر)</span>
-                        <div class="counter-num">{{ results.needed_counters }}</div>
-                        
-                        <div style="margin-top:20px;">
-                            <div class="stat-row">
-                                <span class="stat-label">عدد الرحلات :</span>
-                                <span>{{ results.total_flights }}</span>
-                            </div>
-                            <div class="stat-row">
-                                <span class="stat-label">عدد الركاب :</span>
-                                <span>{{ results.total_pax }}</span>
-                            </div>
-                        </div>
-                    </div>
-                {% elif view_type == 'arrival' %}
-                    <table style="width:100%; margin-top:20px; border-collapse:collapse;">
+                {% if view_type == 'arrival' %}
+                    <table>
                         {% for f in results.flights %}
-                        <tr style="border-bottom: 1px solid #222;">
-                            <td style="padding:15px 0;">
-                                <span style="color:#82B1FF; font-weight:bold; font-size:1.1rem;">{{ f.flight_full }}</span><br>
-                                <small style="color:var(--success)">{{ f.pax }} راكب</small>
-                            </td>
-                            <td style="text-align:right;">
-                                <b>{{ f.origin_city }}</b><br>
-                                <small style="color:var(--text-dim)">{{ f.origin_iata }}</small>
-                            </td>
+                        <tr>
+                            <td><b style="color:#82B1FF;">{{ f.flight_full }}</b><br><small style="color:var(--success)">{{ f.pax }} راكب</small></td>
+                            <td style="text-align:right;"><b>{{ f.origin_city }}</b><br><small style="color:var(--text-dim)">{{ f.origin_iata }}</small></td>
                             <td style="text-align:left; font-weight:bold;">{{ f.time }}</td>
                         </tr>
                         {% endfor %}
                     </table>
+                {% elif view_type == 'peak' %}
+                    <div class="peak-card">
+                        <small style="color: var(--text-dim);">ساعة الذروة القصوى</small><br>
+                        <b style="font-size:1.5rem; color:var(--danger);">{{ results.peak.start }} - {{ results.peak.end }}</b><br>
+                        <small>عدد الرحلات: {{ results.peak.count }}</small>
+                    </div>
+                    <h4 style="margin-top:20px; color:var(--text-dim)">الفجوات (أكثر من 15د):</h4>
+                    {% for gap in results.gaps %}
+                        <div class="gap-item">
+                            <span>{{ gap.from }} ➜ {{ gap.to }}</span>
+                            <span style="color:var(--success)">{{ gap.duration }} دقيقة</span>
+                        </div>
+                    {% endfor %}
+                {% elif view_type == 'analysis' %}
+                    <div style="background:#000; padding:30px; border-radius:20px; text-align:center; margin-top:20px;">
+                        <small style="color:var(--text-dim)">الاحتياج التشغيلي (كاونتر)</small>
+                        <h1 style="color:var(--success); font-size:4rem; margin:10px 0;">{{ results.needed_counters }}</h1>
+                        <div class="stat-line"><span>عدد الرحلات :</span><span style="color:white">{{ results.total_flights }}</span></div>
+                        <div class="stat-line"><span>عدد الركاب :</span><span style="color:white">{{ results.total_pax }}</span></div>
+                    </div>
                 {% endif %}
             {% endif %}
         </div>
