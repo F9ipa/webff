@@ -15,20 +15,22 @@ class FlightAnalyzer:
             "User-Agent": "Mozilla/5.0"
         }
 
-    # حساب سعة الركاب بناءً على موديل الطائرة بدقة
-    def get_pax_capacity(self, ac_type):
+    # دالة احترافية لحساب السعة بناءً على طراز الطائرة الحقيقي
+    def get_dynamic_capacity(self, ac_type):
         if not ac_type: return 160
-        ac_type = ac_type.upper()
+        ac = str(ac_type).upper()
         
-        # طائرات عريضة البدن (سعة كبيرة)
-        if any(x in ac_type for x in ['777', '77W', '772', '787', '789', '747', '380', '350', '330', '333', '332']):
+        # الفئة الأولى: الطائرات العملاقة (Wide-body)
+        if any(x in ac for x in ['777', '77W', '787', '789', '330', '333', '350', '747', '380']):
             return 300
-        # طائرات متوسطة (سعة عادية)
-        elif any(x in ac_type for x in ['320', '321', '737', '738', 'MAX']):
-            return 165
-        # طائرات صغيرة
-        else:
-            return 120
+        # الفئة الثانية: الطائرات المتوسطة (Narrow-body)
+        elif any(x in ac for x in ['320', '321', '737', '738', 'MAX', '319']):
+            return 170
+        # الفئة الثالثة: الطائرات الإقليمية والصغيرة
+        elif any(x in ac for x in ['E190', 'E170', 'AT7', 'DH4', 'CRJ']):
+            return 90
+        # افتراضي في حال عدم التعرف على النوع
+        return 165
 
     def fetch_data(self, start_dt, end_dt):
         params = {
@@ -71,26 +73,30 @@ def index():
             dt_raw = f.get('EarlyOrDelayedDateTime').split('+')[0]
             dt_obj = datetime.fromisoformat(dt_raw)
             
-            # حساب الركاب بناءً على نوع الطائرة
-            pax = analyzer.get_pax_capacity(f.get('AircraftType'))
+            # حساب الركاب بناءً على نوع الطائرة الحقيقي من الـ API
+            ac_model = f.get('AircraftType', '')
+            pax = analyzer.get_dynamic_capacity(ac_model)
             total_pax += pax
             
-            # جلب الأسماء بالعربي
-            city_ar = f.get('OriginAirportArabicName') or f.get('OriginAirportEnglishName', '')
-            country_ar = f.get('OriginCountryArabicName') or f.get('OriginCountryEnglishName', '')
+            # تنسيق "قادمة من": اسم المدينة بالعربي - كود المطار
+            city_ar = f.get('OriginAirportArabicName') or "غير معروف"
+            iata_code = f.get('OriginAirportIataCode') or "---"
             
             flights_list.append({
                 'fn': f.get('FlightNumber'),
-                'origin': f"{city_ar} - {country_ar}",
+                'origin': f"{city_ar} - {iata_code}",
                 'time': dt_obj.strftime('%H:%M'),
                 'pax': pax,
+                'ac_type': ac_model,
                 'is_delayed': status_code == 'DEL'
             })
+            
             hourly_pax[dt_obj.hour] += pax
             if status_code == 'DEL': delayed_count += 1
 
-        # حساب الاحتياج (كل كاونتر يخدم حوالي 65 مسافر في الساعة)
-        needed_counters = math.ceil(max(hourly_pax.values() or [0]) / 65)
+        # الاحتياج: ركاب أقصى ساعة ذروة / 60 مسافر لكل كاونتر
+        max_pax_hour = max(hourly_pax.values() or [0])
+        needed_counters = math.ceil(max_pax_hour / 60)
 
         results = {
             'flights': flights_list,
