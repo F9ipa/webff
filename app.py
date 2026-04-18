@@ -15,22 +15,12 @@ class FlightAnalyzer:
             "User-Agent": "Mozilla/5.0"
         }
 
-    # دالة احترافية لحساب السعة بناءً على طراز الطائرة الحقيقي
     def get_dynamic_capacity(self, ac_type):
-        if not ac_type: return 160
+        if not ac_type: return 165
         ac = str(ac_type).upper()
-        
-        # الفئة الأولى: الطائرات العملاقة (Wide-body)
-        if any(x in ac for x in ['777', '77W', '787', '789', '330', '333', '350', '747', '380']):
-            return 300
-        # الفئة الثانية: الطائرات المتوسطة (Narrow-body)
-        elif any(x in ac for x in ['320', '321', '737', '738', 'MAX', '319']):
-            return 170
-        # الفئة الثالثة: الطائرات الإقليمية والصغيرة
-        elif any(x in ac for x in ['E190', 'E170', 'AT7', 'DH4', 'CRJ']):
-            return 90
-        # افتراضي في حال عدم التعرف على النوع
-        return 165
+        if any(x in ac for x in ['777', '787', '330', '350', '747', '380']): return 300
+        if any(x in ac for x in ['320', '321', '737', 'MAX']): return 170
+        return 160
 
     def fetch_data(self, start_dt, end_dt):
         params = {
@@ -62,9 +52,9 @@ def index():
         data = analyzer.fetch_data(iso_start, iso_end)
         
         flights_list = []
+        hourly_stats = Counter()
         hourly_pax = Counter()
-        total_pax = 0
-        delayed_count = 0
+        flight_objects = [] # لمقارنة الفجوات
 
         for f in data:
             status_code = f.get('PublicRemark', {}).get('Code', '').upper()
@@ -73,42 +63,48 @@ def index():
             dt_raw = f.get('EarlyOrDelayedDateTime').split('+')[0]
             dt_obj = datetime.fromisoformat(dt_raw)
             
-            # حساب الركاب بناءً على نوع الطائرة الحقيقي من الـ API
-            ac_model = f.get('AircraftType', '')
-            pax = analyzer.get_dynamic_capacity(ac_model)
-            total_pax += pax
+            pax = analyzer.get_dynamic_capacity(f.get('AircraftType'))
             
-            # تنسيق "قادمة من": اسم المدينة بالعربي - كود المطار
+            # جلب البيانات المطلوبة بدقة
+            fn = f.get('FlightNumber', '---')
             city_ar = f.get('OriginAirportArabicName') or "غير معروف"
-            iata_code = f.get('OriginAirportIataCode') or "---"
+            iata = f.get('OriginAirportIataCode') or "???"
             
             flights_list.append({
-                'fn': f.get('FlightNumber'),
-                'origin': f"{city_ar} - {iata_code}",
+                'fn': fn,
+                'origin': f"{city_ar} - {iata}",
                 'time': dt_obj.strftime('%H:%M'),
                 'pax': pax,
-                'ac_type': ac_model,
+                'ac': f.get('AircraftType', ''),
                 'is_delayed': status_code == 'DEL'
             })
             
+            hourly_stats[dt_obj.hour] += 1
             hourly_pax[dt_obj.hour] += pax
-            if status_code == 'DEL': delayed_count += 1
+            flight_objects.append(dt_obj)
 
-        # الاحتياج: ركاب أقصى ساعة ذروة / 60 مسافر لكل كاونتر
-        max_pax_hour = max(hourly_pax.values() or [0])
-        needed_counters = math.ceil(max_pax_hour / 60)
+        # حساب الفجوات الزمنية (لصفحة الذروة)
+        flight_objects.sort()
+        gaps = []
+        for i in range(len(flight_objects) - 1):
+            diff = (flight_objects[i+1] - flight_objects[i]).total_seconds() / 60
+            if diff > 15:
+                gaps.append({'from': flight_objects[i].strftime('%H:%M'), 'to': flight_objects[i+1].strftime('%H:%M'), 'duration': int(diff)})
+
+        # تحديد وقت الذروة
+        peak_info = None
+        if hourly_stats:
+            p_hour = max(hourly_stats, key=hourly_stats.get)
+            peak_info = {'start': f"{p_hour:02d}:00", 'end': f"{p_hour+1:02d}:00", 'count': hourly_stats[p_hour]}
 
         results = {
             'flights': flights_list,
             'count': len(flights_list),
-            'total_pax': total_pax,
-            'delayed': delayed_count,
-            'needed_counters': max(needed_counters, 1),
+            'total_pax': sum(hourly_pax.values()),
+            'gaps': gaps,
+            'peak': peak_info,
+            'needed_counters': math.ceil(max(hourly_pax.values() or [0]) / 60),
             'active_counters': active_counters
         }
 
-    return render_template('index.html', results=results, current_date=current_date, 
-                           start_h=start_h, end_h=end_h, view_type=view_type)
-
-if __name__ == '__main__':
-    app.run(debug=True)
+    return render_template('index.html', results=results, current_date=current_date, start_h=start_h, end_h=end_h, view_type=view_type)
