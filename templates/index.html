@@ -8,17 +8,18 @@
         :root { --bg: #0F1114; --card: #1C1E23; --accent: #3F51B5; --success: #00E676; --danger: #FF5252; --text-dim: #888; }
         body { font-family: 'Segoe UI', Tahoma, sans-serif; background: var(--bg); color: white; margin: 0; display: flex; justify-content: center; min-height: 100vh; }
         .container { width: 100%; max-width: 480px; padding: 15px; box-sizing: border-box; }
-        .menu-btn { background: var(--card); border: 1px solid #333; padding: 22px; border-radius: 18px; color: white; width: 100%; margin-bottom: 12px; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 15px; font-size: 1.1rem; border: none; }
+        .menu-btn { background: var(--card); border: 1px solid #333; padding: 22px; border-radius: 18px; color: white; width: 100%; margin-bottom: 12px; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 15px; font-size: 1.1rem; border: none; width: 100%; }
         .page-card { background: var(--card); border-radius: 24px; padding: 20px; border: 1px solid #333; }
         .back-btn { color: var(--accent); text-decoration: none; font-weight: bold; font-size: 0.9rem; display: block; margin-bottom: 15px; }
-        input { background: #000; border: 1px solid #444; color: white; padding: 14px; border-radius: 12px; width: 100%; box-sizing: border-box; margin-bottom: 10px; text-align: center; }
+        input { background: #000; border: 1px solid #444; color: white; padding: 14px; border-radius: 12px; width: 100%; box-sizing: border-box; margin-bottom: 10px; text-align: center; font-size: 1rem; }
         .btn-action { background: var(--accent); border: none; color: white; padding: 16px; border-radius: 12px; width: 100%; cursor: pointer; font-weight: bold; }
         table { width: 100%; border-collapse: collapse; margin-top: 20px; }
         th { color: var(--text-dim); font-size: 0.75rem; border-bottom: 1px solid #333; padding: 10px 5px; text-align: right; }
-        td { padding: 15px 5px; border-bottom: 1px solid #222; font-size: 0.9rem; }
+        td { padding: 15px 5px; border-bottom: 1px solid #222; font-size: 0.95rem; vertical-align: middle; }
         .belt-badge { background: #2d3038; color: var(--success); padding: 5px 12px; border-radius: 8px; font-weight: bold; }
         .flight-code { color: #82B1FF; font-weight: bold; font-size: 1.1rem; }
         .pax-count { color: var(--success); font-size: 0.8rem; display: block; margin-top: 3px; }
+        .peak-card { background: rgba(255,82,82,0.1); padding: 20px; border-radius: 15px; border: 1px solid var(--danger); text-align: center; }
     </style>
 </head>
 <body>
@@ -34,7 +35,7 @@
             <form method="POST">
                 <input type="hidden" name="view_type" value="{{ view_type }}">
                 <div style="display:flex; gap:10px;"><input type="time" name="start_time" value="{{ start_h }}"><input type="time" name="end_time" value="{{ end_h }}"></div>
-                {% if view_type == 'analysis' %}<input type="number" name="active_counters" placeholder="عدد الكاونترات حالياً..." value="{{ results.active_counters or '' }}">{% endif %}
+                {% if view_type == 'analysis' %}<input type="number" name="active_counters" placeholder="عدد الكاونترات الحالية..." value="{{ results.active_counters or '' }}">{% endif %}
                 <button type="submit" class="btn-action">تحديث البيانات</button>
             </form>
 
@@ -45,50 +46,46 @@
                             <tr>
                                 <th>معلومات الرحلة</th>
                                 <th>جهة القدوم</th>
-                                <th style="text-align:center;">سير الشنط</th>
-                                <th>وقت الوصول</th>
+                                <th style="text-align:center;">سير</th>
+                                <th>الوقت</th>
                             </tr>
                         </thead>
                         <tbody>
                             {% for f in results.flights %}
                             <tr>
-                                <td>
-                                    <span class="flight-code">{{ f.flight_full }}</span>
-                                    <span class="pax-count">{{ f.pax }} راكب</span>
-                                </td>
-                                <td>
-                                    <b>{{ f.origin_city }}</b><br>
-                                    <small style="color:var(--text-dim)">{{ f.origin_iata }}</small>
-                                </td>
+                                <td><span class="flight-code">{{ f.flight_full }}</span><span class="pax-count">{{ f.pax }} راكب</span></td>
+                                <td><b>{{ f.origin_city }}</b><br><small style="color:var(--text-dim)">{{ f.origin_iata }}</small></td>
                                 <td style="text-align:center;"><span class="belt-badge">{{ f.belt }}</span></td>
-                                <td style="font-weight: bold;">{{ f.time }}</td>
+                                <td style="font-weight: bold; white-space: nowrap;">{{ f.time }}</td>
                             </tr>
                             {% endfor %}
                         </tbody>
                     </table>
                 {% elif view_type == 'peak' %}
-                    <div style="margin-top:25px; text-align:center;">
-                        <div style="background:rgba(255,82,82,0.1); padding:20px; border-radius:15px; border:1px solid var(--danger);">
-                            <small>ساعة الذروة القصوى</small><br>
-                            <b style="font-size:1.4rem; color:var(--danger);">{{ results.peak.start }} - {{ results.peak.end }}</b>
+                    <div style="margin-top:25px;">
+                        <div class="peak-card">
+                            <small style="color: var(--text-dim);">ساعة الذروة القصوى</small><br>
+                            <b style="font-size:1.6rem; color:var(--danger); display:block; margin: 10px 0;">{{ results.peak.start }} - {{ results.peak.end }}</b>
+                            <div style="border-top: 1px solid rgba(255,82,82,0.2); margin-top: 10px; padding-top: 10px;">
+                                <span style="color: white;">عدد الرحلات: </span>
+                                <span style="color: var(--danger); font-weight: bold; font-size: 1.2rem;">{{ results.peak.count }}</span>
+                            </div>
                         </div>
-                        <h4 style="text-align:right; margin-top:25px;">الفجوات المتاحة (>15 د):</h4>
+                        <h4 style="text-align:right; margin-top:25px; color: var(--text-dim);">الفجوات المتاحة:</h4>
                         {% for gap in results.gaps %}
                             <div style="background:#000; padding:12px; border-radius:10px; margin-bottom:8px; display:flex; justify-content:space-between; border-right:4px solid var(--success);">
-                                <span>{{ gap.from }} ➜ {{ gap.to }}</span>
-                                <span style="color:var(--success)">{{ gap.duration }} دقيقة</span>
+                                <span style="font-size: 0.85rem;">{{ gap.from }} ➜ {{ gap.to }}</span>
+                                <span style="color:var(--success); font-weight: bold;">{{ gap.duration }} دقيقة</span>
                             </div>
                         {% endfor %}
                     </div>
                 {% elif view_type == 'analysis' %}
-                    <div style="margin-top:25px; text-align:center; background:#000; padding:30px; border-radius:20px;">
-                        <small style="color:var(--text-dim);">الاحتياج التشغيلي (كاونتر)</small>
-                        <h1 style="color:var(--success); font-size:4rem; margin:10px 0;">{{ results.needed_counters }}</h1>
-                        {% if results.active_counters > 0 %}
-                            <div style="color: {{ 'var(--success)' if results.active_counters >= results.needed_counters else 'var(--danger)' }}">
-                                {{ '✅ العدد كافٍ' if results.active_counters >= results.needed_counters else '⚠️ نقص ' ~ (results.needed_counters - results.active_counters) ~ ' كاونتر' }}
-                            </div>
-                        {% endif %}
+                    <div style="margin-top:25px; text-align:center;">
+                        <div style="background:#000; padding:30px; border-radius:20px;">
+                            <small style="color:var(--text-dim);">الاحتياج بناءً على {{ results.max_hourly_pax }} راكب</small>
+                            <h1 style="color:var(--success); font-size:4rem; margin:10px 0;">{{ results.needed_counters }}</h1>
+                            <b>كاونتر مطلوب</b>
+                        </div>
                     </div>
                 {% endif %}
             {% endif %}
