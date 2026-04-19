@@ -1,13 +1,18 @@
 import os
-import requests
+import json
 from flask import Flask, render_template, jsonify, request
 from datetime import datetime
-import urllib.parse
 
 app = Flask(__name__)
 
-# بيانات الاعتماد والروابط
-AUTH_HEADER = "Basic dGVzdGVyOlRoZVMzY3JldA=="
+# دالة لقراءة البيانات من الملف المحلي
+def load_local_data():
+    try:
+        with open('data.json', 'r', encoding='utf-8') as f:
+            return json.load(f)
+    except Exception as e:
+        print(f"Error reading data.json: {e}")
+        return {"value": []}
 
 @app.route('/')
 def index():
@@ -15,69 +20,62 @@ def index():
 
 @app.route('/api/flights')
 def get_flights():
-    # 1. جلب الوقت من المتصفح
-    start_t = request.args.get('start', '00:00')
-    end_t = request.args.get('end', '23:59')
-    today = datetime.now().strftime('%Y-%m-%d')
-
-    # 2. بناء الفلتر الزمني بدقة (تنسيق ISO مع الترميز)
-    start_val = f"{today}T{start_t}:00.000+03:00"
-    end_val = f"{today}T{end_t}:59.999+03:00"
-
-    # 3. بناء الرابط مع الالتزام بصيغة OData
-    filter_query = (
-        f"(EarlyOrDelayedDateTime ge {start_val} and EarlyOrDelayedDateTime lt {end_val}) "
-        f"and PublicRemark/Code ne 'NOP' and tolower(FlightNature) eq 'arrival' "
-        f"and Terminal eq 'T1' and (tolower(InternationalStatus) eq 'international')"
-    )
+    data = load_local_data()
+    flights_raw = data.get('value', [])
     
-    # تحويل الفلتر لصيغة تفهمها الروابط (URL Encoding)
-    encoded_filter = urllib.parse.quote(filter_query)
-    
-    final_url = f"https://www.kaia.sa/ext-api/flightsearch/flights?filter={encoded_filter}&$orderby=EarlyOrDelayedDateTime&$top=100&$count=true"
+    processed_flights = []
+    for f in flights_raw:
+        # تنظيف وتحويل الوقت لمعالجته برمجيًا
+        raw_time = f['EarlyOrDelayedDateTime'].split('+')[0]
+        dt_obj = datetime.strptime(raw_time, '%Y-%m-%dT%H:%M:%S')
+        
+        processed_flights.append({
+            "flight_no": f.get('FullFlightNumber'),
+            "airline": f.get('Airline', {}).get('Name'),
+            "aircraft": f.get('Aircraft', {}).get('Description'),
+            "time_str": dt_obj.strftime('%H:%M'),
+            "dt_obj": dt_obj,
+            "origin": f.get('RouteOriginAirport', {}).get('City'),
+            "remark": f.get('PublicRemark', {}).get('DescriptionAr')
+        })
 
-    headers = {
-        "Authorization": AUTH_HEADER,
-        "Accept": "application/json",
-        "OData-Version": "4.0",
-        "Prefer": "odata.maxpagesize=20",
-        "User-Agent": "Mozilla/5.0" # لإيهام السيرفر أن الطلب من متصفح
+    # فرز الرحلات زمنياً
+    processed_flights.sort(key=lambda x: x['dt_obj'])
+
+    # --- تحليل الفجوات والاحتياج ---
+    gaps = []
+    for i in range(1, len(processed_flights)):
+        diff = (processed_flights[i]['dt_obj'] - processed_flights[i-1]['dt_obj']).total_seconds() / 60
+        
+        # إذا كانت الفجوة بين رحلتين أكثر من 15 دقيقة تُعتبر فجوة تشغيلية
+        if diff > 15:
+            gaps.append({
+                "from": processed_flights[i-1]['time_str'],
+                "to": processed_flights[i]['time_str'],
+                "duration": int(diff)
+            })
+
+    total_flights = len(processed_flights)
+    # حساب الركاب: نستخدم سعة المقاعد إذا وجدت، أو متوسط 180
+    total_pax = total_flights * 180 
+    
+    # تحليل الاحتياج (معادلة افتراضية: كاونتر لكل 120 راكب)
+    counter_need = round(total_pax / 120) if total_pax > 0 else 0
+
+    analysis = {
+        "total_flights": total_flights,
+        "total_pax": total_pax,
+        "counter_need": counter_need,
+        "gaps": gaps,
+        "status": "بيانات محلية محدثة"
     }
 
-    try:
-        # طلب البيانات مع مهلة زمنية 15 ثانية
-        response = requests.get(final_url, headers=headers, timeout=15)
-        
-        # التحقق من حالة الرد
-        if response.status_code != 200:
-            return jsonify({"error": f"API Error: {response.status_code}", "details": response.text}), response.status_code
-            
-        data = response.json()
-        flights = data.get('value', [])
-        
-        # تحليل البيانات (الفجوات والركاب)
-        analysis = process_data(flights)
-        
-        return jsonify({"flights": flights, "analysis": analysis})
+    # تحويل dt_obj لنص قبل الإرسال لـ JSON
+    for f in processed_flights:
+        f.pop('dt_obj')
 
-    except Exception as e:
-        return jsonify({"error": "Server Connection Failed", "details": str(e)}), 500
-
-def process_data(flights):
-    gaps = []
-    for i in range(1, len(flights)):
-        try:
-            t1 = datetime.fromisoformat(flights[i-1]['EarlyOrDelayedDateTime'].replace('Z', '+00:00'))
-            t2 = datetime.fromisoformat(flights[i]['EarlyOrDelayedDateTime'].replace('Z', '+00:00'))
-            diff = (t2 - t1).total_seconds() / 60
-            if diff > 15:
-                gaps.append({"from": t1.strftime('%H:%M'), "to": t2.strftime('%H:%M'), "duration": int(diff)})
-        except: continue
-            
-    pax = len(flights) * 180
-    return {"total_pax": pax, "counter_need": round(pax / 120), "gaps": gaps}
+    return jsonify({"flights": processed_flights, "analysis": analysis})
 
 if __name__ == '__main__':
-    # مهم جداً لعمل Render
     port = int(os.environ.get('PORT', 5000))
     app.run(host='0.0.0.0', port=port)
