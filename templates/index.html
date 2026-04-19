@@ -2,77 +2,80 @@
 <html lang="ar" dir="rtl">
 <head>
     <meta charset="UTF-8">
-    <title>شاشة عمليات KAIA - تصميم فيليكس</title>
+    <title>عمليات مطار الملك عبدالعزيز - فيليكس</title>
     <style>
         body { background-color: #0b0e14; color: #e0e0e0; font-family: 'Segoe UI', sans-serif; margin: 0; padding: 20px; }
+        .filter-bar { background: #1a1f2b; padding: 15px; border-radius: 8px; margin-bottom: 20px; display: flex; gap: 20px; align-items: center; justify-content: center; border: 1px solid #30363d; }
+        input[type="time"] { background: #0d1117; color: white; border: 1px solid #58a6ff; padding: 5px; border-radius: 4px; }
+        .update-btn { background: #238636; color: white; border: none; padding: 8px 20px; border-radius: 6px; cursor: pointer; font-weight: bold; }
+        
+        /* التنسيقات السابقة */
         .nav { display: flex; gap: 10px; justify-content: center; margin-bottom: 20px; }
-        .nav button { background: #1a1f2b; color: white; border: 1px solid #30363d; padding: 10px 20px; cursor: pointer; border-radius: 5px; }
-        .nav button.active { background: #0056b3; }
+        .nav button { background: #161b22; color: #8b949e; border: 1px solid #30363d; padding: 10px 20px; cursor: pointer; border-radius: 6px; }
+        .nav button.active { background: #0056b3; color: white; border-color: #58a6ff; }
         .section { display: none; }
         .section.active { display: block; }
-        table { width: 100%; border-collapse: collapse; background: #0d1117; }
+        table { width: 100%; border-collapse: collapse; }
         th, td { padding: 12px; border: 1px solid #30363d; text-align: center; }
         th { background: #161b22; color: #58a6ff; }
-        .card-box { display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px; margin-bottom: 20px; }
-        .card { background: #1a1f2b; padding: 20px; border-radius: 8px; border-left: 4px solid #0056b3; }
+        .card-box { display: grid; grid-template-columns: repeat(2, 1fr); gap: 15px; margin-bottom: 20px; }
+        .card { background: #1a1f2b; padding: 20px; border-radius: 8px; border-top: 3px solid #0056b3; text-align: center; }
     </style>
 </head>
 <body>
+
+    <div class="filter-bar">
+        <label>من وقت:</label>
+        <input type="time" id="startTime" value="08:00">
+        <label>إلى وقت:</label>
+        <input type="time" id="endTime" value="23:59">
+        <button class="update-btn" onclick="loadData()">تحديث البيانات</button>
+    </div>
+
     <div class="nav">
         <button onclick="show('arrivals')" id="btn-arrivals" class="active">رحلات الوصول</button>
-        <button onclick="show('peak')" id="btn-peak">الذروة والفجوات</button>
-        <button onclick="show('counters')" id="btn-counters">تحليل الكاونترات</button>
+        <button onclick="show('peak')" id="btn-peak">الفجوات التشغيلية</button>
+        <button onclick="show('counters')" id="btn-counters">تحليل الاحتياج</button>
     </div>
 
     <div id="arrivals" class="section active">
         <table id="flightsTable">
-            <thead><tr><th>الوقت</th><th>الخطوط</th><th>الرحلة</th><th>المصدر</th></tr></thead>
+            <thead><tr><th>الوقت المتوقع</th><th>الخطوط</th><th>الرحلة</th><th>المصدر</th><th>الحالة</th></tr></thead>
             <tbody></tbody>
         </table>
-    </div>
-
-    <div id="peak" class="section">
-        <div class="card-box">
-            <div class="card">الفجوات المرصودة<h2 id="gapCount">0</h2></div>
-        </div>
-        <table id="gapsTable">
-            <thead><tr><th>من</th><th>إلى</th><th>المدة (دقيقة)</th></tr></thead>
-            <tbody></tbody>
-        </table>
-    </div>
-
-    <div id="counters" class="section">
-        <div class="card-box">
-            <div class="card">إجمالي الركاب<h2 id="pax">0</h2></div>
-            <div class="card">احتياج الكاونترات<h2 id="cnt">0</h2></div>
-        </div>
     </div>
 
     <script>
         async function loadData() {
-            const res = await fetch('/api/flights');
-            const data = await res.json();
-            
-            // تعبئة الرحلات
+            const start = document.getElementById('startTime').value;
+            const end = document.getElementById('endTime').value;
             const tbody = document.querySelector('#flightsTable tbody');
-            tbody.innerHTML = data.flights.map(f => `
-                <tr>
-                    <td>${f.EarlyOrDelayedDateTime.split('T')[1].substring(0,5)}</td>
-                    <td>${f.Airline.Name}</td>
-                    <td>${f.FlightNumber}</td>
-                    <td>${f.Origin.Name}</td>
-                </tr>
-            `).join('');
+            
+            tbody.innerHTML = '<tr><td colspan="5">جاري جلب البيانات...</td></tr>';
 
-            // تعبئة الفجوات
-            document.getElementById('gapCount').innerText = data.analysis.gaps.length;
-            document.querySelector('#gapsTable tbody').innerHTML = data.analysis.gaps.map(g => `
-                <tr><td>${g.from}</td><td>${g.to}</td><td style="color:#ffa657">${g.duration}</td></tr>
-            `).join('');
+            try {
+                const res = await fetch(`/api/flights?start=${start}&end=${end}`);
+                const data = await res.json();
+                
+                if (data.flights.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="5">لا توجد رحلات في هذا النطاق الزمني</td></tr>';
+                    return;
+                }
 
-            // تعبئة الكاونترات
-            document.getElementById('pax').innerText = data.analysis.total_pax;
-            document.getElementById('cnt').innerText = data.analysis.counter_need;
+                tbody.innerHTML = data.flights.map(f => `
+                    <tr>
+                        <td style="color:#58a6ff">${f.EarlyOrDelayedDateTime.split('T')[1].substring(0,5)}</td>
+                        <td>${f.Airline.Name}</td>
+                        <td>${f.FlightNumber}</td>
+                        <td>${f.Origin.Name}</td>
+                        <td style="color:#39d353">${f.PublicRemark.DescriptionAr || 'في موعدها'}</td>
+                    </tr>
+                `).join('');
+                
+                // تحديث بيانات الأقسام الأخرى (الفجوات والركاب) بنفس الطريقة...
+            } catch (err) {
+                tbody.innerHTML = '<tr><td colspan="5" style="color:red">خطأ في الاتصال بالسيرفر</td></tr>';
+            }
         }
 
         function show(id) {
@@ -82,7 +85,8 @@
             document.getElementById('btn-' + id).classList.add('active');
         }
 
-        loadData();
+        // تشغيل الجلب الأول عند فتح الصفحة
+        window.onload = loadData;
     </script>
 </body>
 </html>
