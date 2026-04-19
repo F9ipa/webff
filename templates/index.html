@@ -2,91 +2,103 @@
 <html lang="ar" dir="rtl">
 <head>
     <meta charset="UTF-8">
-    <title>عمليات مطار الملك عبدالعزيز - فيليكس</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>تحليل الرحلات - تصميم فيليكس</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;700&display=swap" rel="stylesheet">
     <style>
-        body { background-color: #0b0e14; color: #e0e0e0; font-family: 'Segoe UI', sans-serif; margin: 0; padding: 20px; }
-        .filter-bar { background: #1a1f2b; padding: 15px; border-radius: 8px; margin-bottom: 20px; display: flex; gap: 20px; align-items: center; justify-content: center; border: 1px solid #30363d; }
-        input[type="time"] { background: #0d1117; color: white; border: 1px solid #58a6ff; padding: 5px; border-radius: 4px; }
-        .update-btn { background: #238636; color: white; border: none; padding: 8px 20px; border-radius: 6px; cursor: pointer; font-weight: bold; }
-        
-        /* التنسيقات السابقة */
-        .nav { display: flex; gap: 10px; justify-content: center; margin-bottom: 20px; }
-        .nav button { background: #161b22; color: #8b949e; border: 1px solid #30363d; padding: 10px 20px; cursor: pointer; border-radius: 6px; }
-        .nav button.active { background: #0056b3; color: white; border-color: #58a6ff; }
-        .section { display: none; }
-        .section.active { display: block; }
-        table { width: 100%; border-collapse: collapse; }
-        th, td { padding: 12px; border: 1px solid #30363d; text-align: center; }
-        th { background: #161b22; color: #58a6ff; }
-        .card-box { display: grid; grid-template-columns: repeat(2, 1fr); gap: 15px; margin-bottom: 20px; }
-        .card { background: #1a1f2b; padding: 20px; border-radius: 8px; border-top: 3px solid #0056b3; text-align: center; }
+        body { font-family: 'Tajawal', sans-serif; background-color: #f4f7f6; }
+        .card { background: white; border-radius: 15px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
+        .gradient-header { background: linear-gradient(90deg, #1e3a8a, #3b82f6); }
     </style>
 </head>
-<body>
+<body class="p-4">
 
-    <div class="filter-bar">
-        <label>من وقت:</label>
-        <input type="time" id="startTime" value="08:00">
-        <label>إلى وقت:</label>
-        <input type="time" id="endTime" value="23:59">
-        <button class="update-btn" onclick="loadData()">تحديث البيانات</button>
+    <div class="gradient-header text-white p-6 rounded-2xl mb-6 text-center shadow-lg">
+        <h1 class="text-2xl font-bold">لوحة تحليل الرحلات التشغيلية</h1>
+        <p class="text-sm opacity-80">تصميم فيليكس | مطار الملك عبدالعزيز الدولي</p>
     </div>
 
-    <div class="nav">
-        <button onclick="show('arrivals')" id="btn-arrivals" class="active">رحلات الوصول</button>
-        <button onclick="show('peak')" id="btn-peak">الفجوات التشغيلية</button>
-        <button onclick="show('counters')" id="btn-counters">تحليل الاحتياج</button>
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6" id="stats-container">
+        <div class="card p-4 text-center border-r-4 border-blue-500">
+            <p class="text-gray-500 text-sm">إجمالي الرحلات</p>
+            <h2 id="total-flights" class="text-3xl font-bold text-blue-900">-</h2>
+        </div>
+        <div class="card p-4 text-center border-r-4 border-green-500">
+            <p class="text-gray-500 text-sm">إجمالي الركاب المتوقع</p>
+            <h2 id="total-pax" class="text-3xl font-bold text-green-700">-</h2>
+        </div>
+        <div class="card p-4 text-center border-r-4 border-orange-500">
+            <p class="text-gray-500 text-sm">احتياج الكاونترات</p>
+            <h2 id="counter-need" class="text-3xl font-bold text-orange-600">-</h2>
+        </div>
     </div>
 
-    <div id="arrivals" class="section active">
-        <table id="flightsTable">
-            <thead><tr><th>الوقت المتوقع</th><th>الخطوط</th><th>الرحلة</th><th>المصدر</th><th>الحالة</th></tr></thead>
-            <tbody></tbody>
-        </table>
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div class="card p-4">
+            <h3 class="font-bold mb-4 text-red-600 border-b pb-2 italic">⚠️ الفجوات التشغيلية (أكثر من 15 دقيقة)</h3>
+            <div id="gaps-list" class="space-y-2 overflow-y-auto max-h-[400px]">
+                </div>
+        </div>
+
+        <div class="card p-4">
+            <h3 class="font-bold mb-4 text-blue-800 border-b pb-2">📅 قائمة الرحلات القادمة</h3>
+            <div id="flights-list" class="space-y-2 overflow-y-auto max-h-[400px]">
+                </div>
+        </div>
     </div>
 
     <script>
-        async function loadData() {
-            const start = document.getElementById('startTime').value;
-            const end = document.getElementById('endTime').value;
-            const tbody = document.querySelector('#flightsTable tbody');
-            
-            tbody.innerHTML = '<tr><td colspan="5">جاري جلب البيانات...</td></tr>';
-
+        async function fetchData() {
             try {
-                const res = await fetch(`/api/flights?start=${start}&end=${end}`);
-                const data = await res.json();
+                const response = await fetch('/api/flights');
+                const data = await response.json();
                 
-                if (data.flights.length === 0) {
-                    tbody.innerHTML = '<tr><td colspan="5">لا توجد رحلات في هذا النطاق الزمني</td></tr>';
+                if (data.error) {
+                    alert('خطأ في تحميل البيانات: ' + data.error);
                     return;
                 }
 
-                tbody.innerHTML = data.flights.map(f => `
-                    <tr>
-                        <td style="color:#58a6ff">${f.EarlyOrDelayedDateTime.split('T')[1].substring(0,5)}</td>
-                        <td>${f.Airline.Name}</td>
-                        <td>${f.FlightNumber}</td>
-                        <td>${f.Origin.Name}</td>
-                        <td style="color:#39d353">${f.PublicRemark.DescriptionAr || 'في موعدها'}</td>
-                    </tr>
-                `).join('');
-                
-                // تحديث بيانات الأقسام الأخرى (الفجوات والركاب) بنفس الطريقة...
+                // تحديث الإحصائيات
+                document.getElementById('total-flights').innerText = data.analysis.total_flights;
+                document.getElementById('total-pax').innerText = data.analysis.total_pax.toLocaleString();
+                document.getElementById('counter-need').innerText = data.analysis.counter_need;
+
+                // تحديث الفجوات
+                const gapsContainer = document.getElementById('gaps-list');
+                gapsContainer.innerHTML = '';
+                data.analysis.gaps.forEach(gap => {
+                    gapsContainer.innerHTML += `
+                        <div class="bg-red-50 p-3 rounded-lg border border-red-200 flex justify-between items-center">
+                            <div>
+                                <span class="font-bold">${gap.from}</span> ← <span class="font-bold">${gap.to}</span>
+                            </div>
+                            <div class="text-red-700 font-bold font-mono text-lg">${gap.duration} دقيقة</div>
+                        </div>
+                    `;
+                });
+                if(data.analysis.gaps.length === 0) gapsContainer.innerHTML = '<p class="text-gray-400 text-center">لا توجد فجوات تشغيلية</p>';
+
+                // تحديث الرحلات
+                const flightsContainer = document.getElementById('flights-list');
+                flightsContainer.innerHTML = '';
+                data.flights.forEach(f => {
+                    flightsContainer.innerHTML += `
+                        <div class="bg-gray-50 p-3 rounded-lg border border-gray-200 flex justify-between text-sm">
+                            <span class="font-bold w-16">${f.time_str}</span>
+                            <span class="w-20 text-blue-700 font-bold">${f.flight_no}</span>
+                            <span class="flex-1 text-gray-600">${f.airline}</span>
+                        </div>
+                    `;
+                });
+
             } catch (err) {
-                tbody.innerHTML = '<tr><td colspan="5" style="color:red">خطأ في الاتصال بالسيرفر</td></tr>';
+                console.error('Error fetching data:', err);
             }
         }
 
-        function show(id) {
-            document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
-            document.getElementById(id).classList.add('active');
-            document.querySelectorAll('.nav button').forEach(b => b.classList.remove('active'));
-            document.getElementById('btn-' + id).classList.add('active');
-        }
-
-        // تشغيل الجلب الأول عند فتح الصفحة
-        window.onload = loadData;
+        // تشغيل الجلب عند تحميل الصفحة
+        fetchData();
     </script>
 </body>
 </html>
