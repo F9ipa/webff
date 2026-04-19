@@ -3,77 +3,99 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>تحليل الرحلات - تصميم فيليكس</title>
+    <title>نظام فيليكس للتحليل التشغيلي</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;700&display=swap" rel="stylesheet">
     <style>
         body { font-family: 'Tajawal', sans-serif; background-color: #0b0e14; color: #ffffff; }
-        .nav-btn { background-color: #1a202c; border: 1px solid #2d3748; padding: 6px 15px; border-radius: 5px; font-size: 12px; }
-        .nav-btn.active { background-color: #2563eb; border-color: #3b82f6; }
-        .table-header { border-bottom: 1px solid #2d3748; border-top: 1px solid #2d3748; color: #3b82f6; font-weight: bold; }
-        .status-error { color: #ef4444; font-size: 14px; margin-top: 20px; }
+        .nav-btn { background-color: #1a202c; border: 1px solid #2d3748; padding: 6px 15px; border-radius: 5px; font-size: 11px; color: #a0aec0; transition: 0.3s; }
+        .nav-btn.active { background-color: #2563eb; border-color: #3b82f6; color: white; }
+        .table-header { border-bottom: 1px solid #2d3748; border-top: 1px solid #2d3748; color: #3b82f6; font-size: 11px; }
+        .stat-card { background: #1a202c; border-radius: 10px; padding: 15px; border: 1px solid #2d3748; }
     </style>
 </head>
 <body class="p-2">
 
-    <div class="flex items-center justify-center gap-2 mb-4 bg-[#1a202c] p-2 rounded-md text-[10px]">
-        <span>من وقت:</span>
-        <input type="text" value="8:00 ص" class="bg-black border border-gray-600 px-1 rounded w-16 text-center">
-        <span>إلى وقت:</span>
-        <input type="text" value="11:59 م" class="bg-black border border-gray-600 px-1 rounded w-16 text-center">
-        <button class="bg-green-600 px-3 py-1 rounded text-white">تحديث البيانات</button>
+    <div class="flex items-center justify-center gap-2 mb-4 bg-[#1a202c] p-2 rounded-md text-[10px] border border-gray-800">
+        <span>من: <input type="text" value="08:00 ص" class="bg-black border border-gray-700 px-1 rounded w-14"></span>
+        <span>إلى: <input type="text" value="11:59 م" class="bg-black border border-gray-700 px-1 rounded w-14"></span>
+        <button onclick="loadData()" class="bg-green-600 px-3 py-1 rounded text-white font-bold">تحديث</button>
     </div>
 
     <div class="flex justify-center gap-1 mb-4">
-        <button class="nav-btn" onclick="showTab('counters')">تحليل الاحتياج</button>
-        <button class="nav-btn" onclick="showTab('gaps')">الذروة والفجوات</button>
-        <button class="nav-btn active" onclick="showTab('flights')">رحلات الوصول</button>
+        <button id="btn-counters" class="nav-btn" onclick="showSection('counters')">تحليل الاحتياج</button>
+        <button id="btn-gaps" class="nav-btn" onclick="showSection('gaps')">الذروة والفجوات</button>
+        <button id="btn-flights" class="nav-btn active" onclick="showSection('flights')">رحلات الوصول</button>
     </div>
 
-    <div id="main-content">
-        <div class="grid grid-cols-4 text-center p-2 table-header text-xs">
+    <div id="section-flights">
+        <div class="grid grid-cols-4 text-center p-2 table-header mb-2">
             <div>الوقت المتوقع</div>
             <div>الخطوط</div>
             <div>الرحلة</div>
             <div>المصدر / الحالة</div>
         </div>
-        
-        <div id="data-container" class="mt-2 text-center text-xs">
-            <div id="loading" class="py-10 text-gray-500">جاري تحميل البيانات...</div>
+        <div id="flights-list" class="space-y-1"></div>
+    </div>
+
+    <div id="section-gaps" class="hidden space-y-4">
+        <div class="stat-card border-r-4 border-orange-500">
+            <p class="text-xs text-gray-400">وقت الذروة المتوقع</p>
+            <h2 id="peak-time" class="text-xl font-bold text-orange-400">-</h2>
+            <p id="peak-count" class="text-[10px] text-gray-500 mt-1"></p>
+        </div>
+        <div class="p-2">
+            <h3 class="text-blue-400 text-xs font-bold mb-2">⏳ الفجوات التشغيلية (> 15 دقيقة):</h3>
+            <div id="gaps-list" class="space-y-2"></div>
+        </div>
+    </div>
+
+    <div id="section-counters" class="hidden">
+        <div class="stat-card text-center border-t-4 border-blue-600">
+            <p class="text-sm text-gray-400">احتياج الكاونترات المقترح</p>
+            <h2 id="counter-need" class="text-4xl font-bold text-blue-500 py-4">-</h2>
+            <p class="text-[10px] text-gray-500">بناءً على إجمالي الرحلات المنتظرة</p>
         </div>
     </div>
 
     <script>
         async function loadData() {
-            try {
-                const response = await fetch('/api/flights');
-                const data = await response.json();
-                const container = document.getElementById('data-container');
-                container.innerHTML = '';
+            const res = await fetch('/api/flights');
+            const data = await res.json();
 
-                if (data.flights && data.flights.length > 0) {
-                    data.flights.forEach(f => {
-                        container.innerHTML += `
-                            <div class="grid grid-cols-4 py-3 border-b border-gray-800 items-center">
-                                <div class="text-blue-400 font-mono">${f.time_str}</div>
-                                <div>${f.airline}</div>
-                                <div>${f.flight_no}</div>
-                                <div class="text-gray-400">${f.origin || 'دولي'}</div>
-                            </div>
-                        `;
-                    });
-                } else {
-                    container.innerHTML = `<p class="status-error">خطأ في الاتصال بالسيرفر أو لا توجد بيانات</p>`;
-                }
-            } catch (e) {
-                document.getElementById('data-container').innerHTML = `<p class="status-error">خطأ في الاتصال بالسيرفر</p>`;
-            }
+            // 1. تعبئة الرحلات
+            const fList = document.getElementById('flights-list');
+            fList.innerHTML = data.flights.map(f => `
+                <div class="grid grid-cols-4 text-center p-2 text-[11px] border-b border-gray-900 items-center">
+                    <div class="text-blue-400 font-mono font-bold">${f.time}</div>
+                    <div class="truncate px-1">${f.airline}</div>
+                    <div class="font-bold">${f.flight_no}</div>
+                    <div class="${f.status_code === 'DEL' ? 'text-red-500' : 'text-gray-400'} text-[9px]">${f.origin} <br> ${f.status_ar}</div>
+                </div>
+            `).join('');
+
+            // 2. تعبئة الفجوات والذروة
+            document.getElementById('peak-time').innerText = data.analysis.peak_time;
+            document.getElementById('peak-count').innerText = `عدد الرحلات في هذه الساعة: ${data.analysis.peak_count}`;
+            const gList = document.getElementById('gaps-list');
+            gList.innerHTML = data.analysis.gaps.map(g => `
+                <div class="bg-[#111827] p-2 rounded border border-gray-800 flex justify-between text-xs">
+                    <span>${g.from} ← ${g.to}</span>
+                    <span class="text-orange-500 font-bold">${g.duration} دقيقة</span>
+                </div>
+            `).join('') || '<p class="text-gray-600 text-xs">لا توجد فجوات كبيرة</p>';
+
+            // 3. تعبئة الاحتياج
+            document.getElementById('counter-need').innerText = data.analysis.counter_need;
         }
 
-        function showTab(tab) {
-            // منطق التبديل بين التبويبات يمكن توسيعه هنا
-            console.log("Switching to: " + tab);
-            loadData(); 
+        function showSection(sect) {
+            ['flights', 'gaps', 'counters'].forEach(s => {
+                document.getElementById('section-' + s).classList.add('hidden');
+                document.getElementById('btn-' + s).classList.remove('active');
+            });
+            document.getElementById('section-' + sect).classList.remove('hidden');
+            document.getElementById('btn-' + sect).classList.add('active');
         }
 
         window.onload = loadData;
