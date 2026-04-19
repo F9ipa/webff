@@ -1,0 +1,13 @@
+{
+  "@odata.context": "https://www.kaia.sa/$metadata#flights",
+  "@odata.count": 62,
+  "value": [
+    {
+      "FullFlightNumber": "QR1190",
+      "EarlyOrDelayedDateTime": "2026-04-19T11:55:00+03:00",
+      "Airline": { "Name": "QATAR AIRWAYS" },
+      "Aircraft": { "Description": "Boeing 777-300ER" }
+    },
+    ... ضع بقية البيانات هنا ...
+  ]
+}
